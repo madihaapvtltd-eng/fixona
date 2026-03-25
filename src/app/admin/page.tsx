@@ -9,7 +9,7 @@ import { addTaskLog, makeId, upsertTask } from "@/lib/taskStore";
 import type { AssetType, Task, TaskLog, TaskStatus, TaskType } from "@/lib/taskTypes";
 import { useSelectedTechnicianId } from "@/lib/useSelectedTechnician";
 import { auth, onAuthReady } from "@/lib/firebaseClient";
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -37,7 +37,8 @@ export default function AdminPage() {
   const selectedTechnicianName =
     technicians.find((t) => t.id === selectedTechnicianId)?.name ?? "Technician";
 
-  const [newUserName, setNewUserName] = useState("");
+  const [newUserUsername, setNewUserUsername] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
   const [userError, setUserError] = useState<string>("");
 
   const [quickTaskTitle, setQuickTaskTitle] = useState("Repair");
@@ -169,12 +170,18 @@ export default function AdminPage() {
     e.preventDefault();
     setUserError("");
 
-    const name = newUserName.trim();
-    if (!name) return;
+    const username = newUserUsername.trim().toLowerCase();
+    const password = newUserPassword;
+    if (!username || !password) return;
+
+    const domain = (process.env.NEXT_PUBLIC_AUTH_EMAIL_DOMAIN ?? "madmanrep.mv").trim().toLowerCase();
+    const email = `${username}@${domain}`;
 
     try {
-      await createTechnician(name);
-      setNewUserName("");
+      await createUserWithEmailAndPassword(auth, email, password);
+      await createTechnician(username, { id: username });
+      setNewUserUsername("");
+      setNewUserPassword("");
     } catch (err) {
       setUserError(err instanceof Error ? err.message : "Failed to create user");
     }
@@ -251,13 +258,21 @@ export default function AdminPage() {
         <div className="rounded-2xl border border-indigo-200 bg-white p-4 shadow-sm">
           <div className="text-sm font-semibold text-indigo-950">1) Add User</div>
           <form onSubmit={onAddUser} className="mt-3">
-            <label className="text-xs text-zinc-600">Technician / user name</label>
+              <label className="text-xs text-zinc-600">Username</label>
             <input
-              value={newUserName}
-              onChange={(e) => setNewUserName(e.target.value)}
-              placeholder="e.g. Technician 11"
+                value={newUserUsername}
+                onChange={(e) => setNewUserUsername(e.target.value)}
+                placeholder="e.g. tech11"
               className="mt-1 h-10 w-full rounded-lg border border-indigo-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
             />
+              <label className="mt-3 block text-xs text-zinc-600">Password</label>
+              <input
+                type="password"
+                value={newUserPassword}
+                onChange={(e) => setNewUserPassword(e.target.value)}
+                placeholder="Set password for technician"
+                className="mt-1 h-10 w-full rounded-lg border border-indigo-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
+              />
             {userError ? <div className="mt-2 text-xs text-red-700">{userError}</div> : null}
             <div className="mt-3 flex justify-end">
               <button

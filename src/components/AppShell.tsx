@@ -3,31 +3,69 @@
 import { useEffect, useMemo, useState } from "react";
 import SideNav from "@/components/SideNav";
 import BottomNav from "@/components/BottomNav";
-import TechnicianSelect from "@/components/TechnicianSelect";
-import { TECHNICIAN_STORAGE_KEY } from "@/lib/technicians";
 import { useTechnicians } from "@/lib/useTechnicians";
 import Image from "next/image";
-import { ensureAnonymousAuth } from "@/lib/firebaseClient";
+import { onAuthReady } from "@/lib/firebaseClient";
+import { usePathname, useRouter } from "next/navigation";
+
+function emailToUsername(email: string) {
+  return email.split("@")[0].trim().toLowerCase();
+}
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const technicians = useTechnicians();
-  const defaultTechId =
-    (typeof window !== "undefined" && window.localStorage.getItem(TECHNICIAN_STORAGE_KEY)) ||
-    technicians[0]?.id ||
-    "tech-1";
-  const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>(defaultTechId);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [authReady, setAuthReady] = useState(false);
+  const [authEmail, setAuthEmail] = useState<string | null>(null);
+  const [authIsAnonymous, setAuthIsAnonymous] = useState(false);
+
+  const selectedTechnicianId = useMemo(() => {
+    if (!authEmail) return null;
+    return emailToUsername(authEmail);
+  }, [authEmail]);
+
   const effectiveSelectedTechnicianId = useMemo(() => {
-    if (technicians.some((t) => t.id === selectedTechnicianId)) return selectedTechnicianId;
-    return technicians[0]?.id ?? selectedTechnicianId;
+    if (selectedTechnicianId && technicians.some((t) => t.id === selectedTechnicianId)) return selectedTechnicianId;
+    return null;
   }, [selectedTechnicianId, technicians]);
 
   const selectedTechnicianName = useMemo(() => {
+    if (!effectiveSelectedTechnicianId) return "Technician";
     return technicians.find((t) => t.id === effectiveSelectedTechnicianId)?.name ?? "Technician";
   }, [effectiveSelectedTechnicianId, technicians]);
 
   useEffect(() => {
-    void ensureAnonymousAuth();
+    const unsub = onAuthReady((user) => {
+      if (!user) {
+        setAuthEmail(null);
+        setAuthIsAnonymous(false);
+        setAuthReady(true);
+        return;
+      }
+
+      const u = user as { email?: string } | null;
+      setAuthEmail(u?.email ?? null);
+      setAuthIsAnonymous(Boolean((user as { isAnonymous?: boolean }).isAnonymous));
+      setAuthReady(true);
+    });
+
+    return () => unsub();
   }, []);
+
+  const isPublicPath = pathname === "/" || pathname === "/login" || pathname === "/admin";
+  useEffect(() => {
+    if (!authReady) return;
+    if (isPublicPath) return;
+    if (!authEmail) {
+      router.replace("/login");
+      return;
+    }
+    if (authIsAnonymous) {
+      router.replace("/login");
+    }
+  }, [authEmail, authIsAnonymous, authReady, isPublicPath, pathname, router]);
 
   return (
     <div className="min-h-screen bg-zinc-50">
@@ -43,11 +81,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
                 <div className="min-w-0">
                   <div className="truncate text-sm font-semibold text-zinc-900">MADMANREP</div>
-                  <div className="truncate text-xs text-zinc-500">Maintenance & Repair • Local test</div>
+                  <div className="truncate text-xs text-zinc-500">Maintenance & Repair</div>
                 </div>
               </div>
 
-              <TechnicianSelect selectedId={effectiveSelectedTechnicianId} onChange={setSelectedTechnicianId} />
+              <div className="hidden text-right sm:block">
+                <div className="text-xs text-zinc-500">Working as</div>
+                <div className="truncate text-sm font-medium text-zinc-900">{selectedTechnicianName}</div>
+              </div>
             </div>
           </header>
 

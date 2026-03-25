@@ -19,7 +19,7 @@ export default function SideNav() {
     <aside className="hidden w-64 shrink-0 border-r border-zinc-200 bg-white md:block">
       <div className="p-4">
         <div className="text-sm font-semibold text-zinc-900">MADMANREP</div>
-        <div className="mt-1 text-xs text-zinc-500">Local test (no login)</div>
+          <div className="mt-1 text-xs text-zinc-500">Technician login required</div>
       </div>
       <nav className="p-2">
         {NAV_ITEMS.map((item) => {

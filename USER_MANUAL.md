@@ -1,10 +1,11 @@
 # User Manual (Staff)
 
-This manual explains how staff can use the **Maintenance & Repair** app in the current **local test MVP**.
+This manual explains how staff can use the **Maintenance & Repair** app with technician login.
 
-## 1. Choose your technician name
-At the top of the app, use the dropdown **“Working as”** to select your technician identity.
-This lets the app record who created/updated each task in the timeline.
+## 1. Login as a technician
+1. Open `/login`
+2. Enter your **username + password** (created by admin)
+3. After login, the app locks your identity to your account (no “Working as” dropdown).
 
 ## 2. Create a new task
 1. Open **New Task**
@@ -71,7 +72,7 @@ Each asset includes:
 
 ## 7. Important note (current MVP)
 This MVP stores tasks, logs, technicians, and assets in **Firebase (Firestore)**.
-Staff work in an anonymous Firebase session (no separate staff password), so other staff users can see the same updates in real time.
+Technicians must login via Firebase Email/Password (app generates an internal email from your username).
 
 ## 8. Images note (Cloudinary)
 When you upload an image:

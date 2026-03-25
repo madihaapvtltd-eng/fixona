@@ -17,11 +17,11 @@ export const TECHNICIANS_CHANGED_EVENT = "madihaa-technicians-change";
 import { db } from "@/lib/firebaseClient";
 import { deleteDoc, doc, setDoc, updateDoc } from "firebase/firestore";
 
-export async function createTechnician(name: string) {
+export async function createTechnician(name: string, opts?: { id?: string }) {
   const cleanName = name.trim();
   if (!cleanName) return;
 
-  const id = `tech-${Date.now().toString(16)}-${Math.random().toString(16).slice(2, 6)}`;
+  const id = (opts?.id ?? `tech-${Date.now().toString(16)}-${Math.random().toString(16).slice(2, 6)}`).trim();
   await setDoc(doc(db, "technicians", id), { name: cleanName });
 }
 
