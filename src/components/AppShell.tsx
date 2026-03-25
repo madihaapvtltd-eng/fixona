@@ -7,6 +7,7 @@ import { useTechnicians } from "@/lib/useTechnicians";
 import Image from "next/image";
 import { onAuthReady } from "@/lib/firebaseClient";
 import { usePathname, useRouter } from "next/navigation";
+import { Sparkles } from "lucide-react";
 
 function emailToUsername(email: string) {
   return email.split("@")[0].trim().toLowerCase();
@@ -68,12 +69,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [authEmail, authIsAnonymous, authReady, isPublicPath, pathname, router]);
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-sky-50">
       <div className="flex min-h-screen">
         <SideNav />
 
         <div className="flex flex-1 flex-col">
-          <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white">
+          <header className="sticky top-0 z-20 border-b border-indigo-100 bg-white/90 backdrop-blur">
             <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-6">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50">
@@ -81,7 +82,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
                 <div className="min-w-0">
                   <div className="truncate text-sm font-semibold text-zinc-900">MADMANREP</div>
-                  <div className="truncate text-xs text-zinc-500">Maintenance & Repair</div>
+                  <div className="flex items-center gap-1 truncate text-xs text-indigo-600">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Maintenance & Repair
+                  </div>
                 </div>
               </div>
 

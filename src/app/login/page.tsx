@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebaseClient";
+import { KeyRound, UserRound } from "lucide-react";
 
 function emailFromUsername(username: string) {
   const domain = (process.env.NEXT_PUBLIC_AUTH_EMAIL_DOMAIN ?? "madmanrep.mv").trim().toLowerCase();
@@ -38,37 +39,43 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto w-full max-w-md">
-      <div className="rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm">
+      <div className="rounded-3xl border border-indigo-200 bg-white/95 p-5 shadow-lg shadow-indigo-100">
         <h1 className="text-xl font-semibold text-indigo-950">Technician Login</h1>
-        <p className="mt-1 text-sm text-indigo-700/80">Use your username + password assigned by admin.</p>
+        <p className="mt-1 text-sm text-indigo-700/80">Use your username and password assigned by admin.</p>
 
         <form onSubmit={onSubmit} className="mt-4 grid gap-3">
           <div>
             <label className="text-xs text-zinc-600">Username</label>
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="e.g. tech11"
-              className="mt-1 h-10 w-full rounded-lg border border-indigo-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
-            />
+            <div className="mt-1 flex items-center rounded-xl border border-indigo-200 bg-white px-3 focus-within:ring-2 focus-within:ring-indigo-300">
+              <UserRound className="h-4 w-4 text-indigo-500" />
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="e.g. tech11"
+                className="h-10 w-full bg-transparent px-2 text-sm outline-none"
+              />
+            </div>
           </div>
 
           <div>
             <label className="text-xs text-zinc-600">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Your password"
-              className="mt-1 h-10 w-full rounded-lg border border-indigo-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
-            />
+            <div className="mt-1 flex items-center rounded-xl border border-indigo-200 bg-white px-3 focus-within:ring-2 focus-within:ring-indigo-300">
+              <KeyRound className="h-4 w-4 text-indigo-500" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Your password"
+                className="h-10 w-full bg-transparent px-2 text-sm outline-none"
+              />
+            </div>
           </div>
 
           {error ? <div className="text-xs text-red-700">{error}</div> : null}
 
           <button
             type="submit"
-            className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-600"
+            className="rounded-xl bg-gradient-to-r from-indigo-700 to-violet-600 px-4 py-2 text-sm font-medium text-white shadow-md hover:from-indigo-600 hover:to-violet-500"
           >
             Sign in
           </button>
