@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTechnicians } from "@/lib/useTechnicians";
 import { createTechnician } from "@/lib/technicians";
 import { addTaskLog, makeId, upsertTask } from "@/lib/taskStore";
 import type { AssetType, Task, TaskLog, TaskStatus, TaskType } from "@/lib/taskTypes";
 import { useSelectedTechnicianId } from "@/lib/useSelectedTechnician";
+import { auth, onAuthReady } from "@/lib/firebaseClient";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -20,6 +22,13 @@ function ymd(d: Date) {
 }
 
 export default function AdminPage() {
+  const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "").toLowerCase().trim();
+  const [authEmail, setAuthEmail] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState<string>("");
+
   const technicians = useTechnicians();
   const selectedTechnicianId = useSelectedTechnicianId();
 
@@ -40,6 +49,110 @@ export default function AdminPage() {
   const [latestUpdateText, setLatestUpdateText] = useState("Initial admin entry.");
 
   const [quickTaskError, setQuickTaskError] = useState<string>("");
+
+  useEffect(() => {
+    const unsub = onAuthReady((user) => {
+      const u = user as { email?: string } | null;
+      setAuthEmail(u?.email ?? null);
+      setAuthLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  const isAdmin = useMemo(() => {
+    if (!ADMIN_EMAIL) return false;
+    return (authEmail ?? "").toLowerCase() === ADMIN_EMAIL;
+  }, [ADMIN_EMAIL, authEmail]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError("");
+    if (!loginEmail.trim() || !loginPassword) {
+      setLoginError("Enter email and password.");
+      return;
+    }
+    try {
+      await signInWithEmailAndPassword(auth, loginEmail.trim(), loginPassword);
+      setLoginPassword("");
+    } catch (err) {
+      setLoginError(err instanceof Error ? err.message : "Login failed");
+    }
+  };
+
+  const handleLogout = async () => {
+    setLoginError("");
+    await signOut(auth);
+  };
+
+  if (!ADMIN_EMAIL) {
+    return (
+      <div className="mx-auto w-full max-w-5xl rounded-xl border border-rose-200 bg-white p-4">
+        <div className="text-sm font-semibold text-rose-700">Admin email not configured</div>
+        <div className="mt-2 text-sm text-zinc-600">Set `NEXT_PUBLIC_ADMIN_EMAIL` in your environment.</div>
+      </div>
+    );
+  }
+
+  if (authLoading || !isAdmin) {
+    return (
+      <div className="mx-auto w-full max-w-5xl">
+        <div className="rounded-2xl border border-indigo-200 bg-white p-4 shadow-sm">
+          <div className="text-xl font-semibold text-indigo-950">Admin Login</div>
+          <div className="mt-1 text-sm text-indigo-700/80">Sign in using Firebase Email/Password.</div>
+
+          {authEmail && !isAdmin ? (
+            <div className="mt-3 text-sm text-red-700">
+              Unauthorized email: {authEmail}
+            </div>
+          ) : null}
+
+          <form onSubmit={handleLogin} className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="md:col-span-2">
+              <label className="text-xs text-zinc-600">Email</label>
+              <input
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="operations@madihaa.mv"
+                className="mt-1 h-10 w-full rounded-lg border border-indigo-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-xs text-zinc-600">Password</label>
+              <input
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="Your password"
+                className="mt-1 h-10 w-full rounded-lg border border-indigo-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+            </div>
+
+            {loginError ? <div className="md:col-span-2 text-xs text-red-700">{loginError}</div> : null}
+
+            <div className="md:col-span-2 flex justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => void handleLogout()}
+                className="rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+              >
+                Sign out
+              </button>
+              <button
+                type="submit"
+                className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-600"
+              >
+                Sign in as admin
+              </button>
+            </div>
+          </form>
+
+          <div className="mt-3 text-xs text-zinc-500">
+            Admin email must match: <span className="font-medium">{ADMIN_EMAIL}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const onAddUser = async (e: React.FormEvent) => {
     e.preventDefault();

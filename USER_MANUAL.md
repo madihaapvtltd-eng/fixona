@@ -69,15 +69,17 @@ Each asset includes:
 - location name (e.g. “Shop 1”)
 - optional brand/model/serial/notes
 
-## 7. Important note (local MVP)
-This MVP stores tasks in your browser using `localStorage`.
-So:
-- other staff computers will not see your tasks
-- data is not yet shared like a real production system
+## 7. Important note (current MVP)
+This MVP stores tasks, logs, technicians, and assets in **Firebase (Firestore)**.
+Staff work in an anonymous Firebase session (no separate staff password), so other staff users can see the same updates in real time.
 
-After you connect Firebase + Vercel deployment, the same manual steps will work with real shared data.
+## 8. Images note (Cloudinary)
+When you upload an image:
+- the app uploads it to **Cloudinary** (unsigned upload)
+- the returned image `url` is saved in Firestore with the task
+- your browser still shows a temporary preview while uploading
 
-## 8. Images note (local MVP)
-In this MVP, images are stored inside your browser storage (as a `dataUrl`).
-Later we will switch to **Cloudinary** and store only image URLs in the database.
+## 9. Admin access (/admin)
+Admin can add technicians and create tasks from the `/admin` page.
+Admin access is protected by Firebase Email/Password (configured via `NEXT_PUBLIC_ADMIN_EMAIL`).
 
