@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTechnicians } from "@/lib/useTechnicians";
 import { createTechnician } from "@/lib/technicians";
 import { addTaskLog, makeId, upsertTask } from "@/lib/taskStore";
@@ -23,6 +24,7 @@ function ymd(d: Date) {
 
 export default function AdminPage() {
   const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "").toLowerCase().trim();
+  const router = useRouter();
   const [authEmail, setAuthEmail] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [loginEmail, setLoginEmail] = useState("");
@@ -64,6 +66,12 @@ export default function AdminPage() {
     return (authEmail ?? "").toLowerCase() === ADMIN_EMAIL;
   }, [ADMIN_EMAIL, authEmail]);
 
+  const shouldRedirect = !authLoading && !!authEmail && !isAdmin;
+  useEffect(() => {
+    if (!shouldRedirect) return;
+    router.replace("/dashboard");
+  }, [router, shouldRedirect]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
@@ -92,6 +100,9 @@ export default function AdminPage() {
       </div>
     );
   }
+
+  // If a staff user is signed in with a non-admin email, do not show /admin at all.
+  if (shouldRedirect) return null;
 
   if (authLoading || !isAdmin) {
     return (
@@ -226,7 +237,7 @@ export default function AdminPage() {
         <div>
           <h1 className="text-xl font-semibold text-indigo-950">Admin Dashboard</h1>
           <p className="text-sm text-indigo-700/80">
-            Admin can add staff users and create tasks (MVP: no role-based security yet).
+            Admin can add staff users and create tasks.
           </p>
         </div>
         <div className="flex gap-2">
