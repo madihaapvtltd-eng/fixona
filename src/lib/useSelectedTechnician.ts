@@ -26,7 +26,8 @@ export function useSelectedTechnicianId() {
     const unsub = onAuthReady((user) => {
       const fallbackId = TECHNICIANS[0]?.id ?? "tech-1";
       const u = user as { email?: string } | null;
-      const isAnon = Boolean((user as { isAnonymous?: boolean }).isAnonymous);
+      // `user` can be null while auth is resolving; guard before reading properties.
+      const isAnon = Boolean(u && (user as { isAnonymous?: boolean }).isAnonymous);
       if (!u || isAnon) {
         setTechnicianId(fallbackId);
         return;

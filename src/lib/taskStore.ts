@@ -21,10 +21,21 @@ export async function deleteTask(taskId: string) {
 }
 
 export async function upsertTask(task: Task) {
-  await setDoc(doc(db, "tasks", task.id), task);
+  // Firestore does NOT allow `undefined` values in document fields.
+  // Remove any keys whose value is `undefined` before writing.
+  const sanitized: Task = Object.fromEntries(
+    Object.entries(task).filter(([, v]) => v !== undefined),
+  ) as Task;
+
+  await setDoc(doc(db, "tasks", task.id), sanitized);
 }
 
 export async function addTaskLog(log: TaskLog) {
-  await setDoc(doc(db, "taskLogs", log.id), log);
+  // Firestore does NOT allow `undefined` values in document fields.
+  const sanitized: TaskLog = Object.fromEntries(
+    Object.entries(log).filter(([, v]) => v !== undefined),
+  ) as TaskLog;
+
+  await setDoc(doc(db, "taskLogs", log.id), sanitized);
 }
 

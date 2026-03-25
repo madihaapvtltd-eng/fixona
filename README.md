@@ -55,4 +55,3 @@ The next iteration will connect:
 - Role-based authorization (admin-only actions)
 - Automatic reminder generation/scheduling
 - Hardening Firestore Security Rules for production
-

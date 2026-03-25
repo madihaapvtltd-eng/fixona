@@ -412,6 +412,9 @@ export default function AdminPage() {
       <div className="mt-4 rounded-2xl border border-indigo-200 bg-white p-4 shadow-sm">
         <div className="text-sm font-semibold text-indigo-950">Quick Links</div>
         <div className="mt-2 flex flex-wrap gap-2">
+          <Link href="/admin/users" className="rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-medium text-indigo-700 hover:bg-indigo-50">
+            Users (admin)
+          </Link>
           <Link href="/tasks" className="rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-medium text-indigo-700 hover:bg-indigo-50">
             Tasks list
           </Link>

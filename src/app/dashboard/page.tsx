@@ -40,12 +40,12 @@ export default function DashboardPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-lg font-semibold text-zinc-900">Dashboard</h1>
-          <p className="text-sm text-zinc-600">Local test mode: no user login required.</p>
+          <p className="text-sm text-zinc-600">Your maintenance overview.</p>
         </div>
         <div className="flex gap-2">
           <Link
             href="/tasks/new"
-            className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+            className="rounded-lg bg-indigo-700 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-600"
           >
             + New Task
           </Link>
@@ -53,17 +53,40 @@ export default function DashboardPage() {
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-zinc-200 bg-white p-4">
-          <div className="text-sm text-zinc-600">Open</div>
-          <div className="mt-1 text-2xl font-semibold text-zinc-900">{stats.open}</div>
+        <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-indigo-700">Open</div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2a10 10 0 1 0 10 10" />
+                <path d="M12 6v6l4 2" />
+              </svg>
+            </div>
+          </div>
+          <div className="mt-2 text-3xl font-semibold text-indigo-950">{stats.open}</div>
         </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-4">
-          <div className="text-sm text-zinc-600">In progress</div>
-          <div className="mt-1 text-2xl font-semibold text-zinc-900">{stats.inProgress}</div>
+        <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-blue-700">In progress</div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 12a8 8 0 1 0 16 0" />
+                <path d="M12 4v8l5 3" />
+              </svg>
+            </div>
+          </div>
+          <div className="mt-2 text-3xl font-semibold text-blue-950">{stats.inProgress}</div>
         </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-4">
-          <div className="text-sm text-zinc-600">Completed</div>
-          <div className="mt-1 text-2xl font-semibold text-zinc-900">{stats.completed}</div>
+        <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-emerald-700">Completed</div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </div>
+          </div>
+          <div className="mt-2 text-3xl font-semibold text-emerald-950">{stats.completed}</div>
         </div>
       </div>
 
