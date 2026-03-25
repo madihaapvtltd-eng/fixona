@@ -3,13 +3,6 @@ export type Technician = {
   name: string;
 };
 
-const DEFAULT_TECHNICIANS: Technician[] = Array.from({ length: 10 }).map((_, i) => {
-  const n = i + 1;
-  return { id: `tech-${n}`, name: `Technician ${n}` };
-});
-
-export const TECHNICIANS = DEFAULT_TECHNICIANS;
-
 export const TECHNICIAN_STORAGE_KEY = "madihaa_selected_technician_v1";
 export const TECHNICIANS_STORAGE_KEY = "madihaa_technicians_v1";
 export const TECHNICIANS_CHANGED_EVENT = "madihaa-technicians-change";

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { auth, onAuthReady } from "@/lib/firebaseClient";
-import { TECHNICIANS, TECHNICIAN_STORAGE_KEY } from "@/lib/technicians";
+import { TECHNICIAN_STORAGE_KEY } from "@/lib/technicians";
 
 function emailToUsername(email: string) {
   return email.split("@")[0].trim().toLowerCase();
@@ -10,7 +10,7 @@ function emailToUsername(email: string) {
 
 export function useSelectedTechnicianId() {
   const [technicianId, setTechnicianId] = useState<string>(() => {
-    const fallbackId = TECHNICIANS[0]?.id ?? "tech-1";
+    const fallbackId = "unknown";
 
     // If there is already a logged-in user (persisted session), prefer it.
     const current = auth.currentUser;
@@ -24,7 +24,7 @@ export function useSelectedTechnicianId() {
 
   useEffect(() => {
     const unsub = onAuthReady((user) => {
-      const fallbackId = TECHNICIANS[0]?.id ?? "tech-1";
+      const fallbackId = "unknown";
       const u = user as { email?: string } | null;
       // `user` can be null while auth is resolving; guard before reading properties.
       const isAnon = Boolean(u && (user as { isAnonymous?: boolean }).isAnonymous);

@@ -58,7 +58,6 @@ const NAV_ITEMS: Array<{ href: string; label: string }> = [
   { href: "/admin", label: "Admin" },
   { href: "/tasks", label: "Tasks" },
   { href: "/assets", label: "Assets" },
-  { href: "/technicians", label: "Techs" },
   { href: "/tasks/new", label: "Add" },
 ];
 
@@ -69,7 +68,6 @@ export default function BottomNav() {
     if (href === "/admin") return "admin" as const;
     if (href === "/tasks") return "tasks" as const;
     if (href === "/assets") return "assets" as const;
-    if (href === "/technicians") return "techs" as const;
     return "add" as const;
   };
 

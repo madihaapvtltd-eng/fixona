@@ -9,7 +9,6 @@ const NAV_ITEMS: Array<{ href: string; label: string }> = [
   { href: "/tasks", label: "Tasks" },
   { href: "/tasks/new", label: "New Task" },
   { href: "/assets", label: "Assets" },
-  { href: "/technicians", label: "Technicians" },
 ];
 
 export default function SideNav() {
