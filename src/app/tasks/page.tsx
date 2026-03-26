@@ -5,7 +5,8 @@ import { useTasks } from "@/lib/useTasks";
 import type { TaskStatus, TaskType } from "@/lib/taskTypes";
 import Link from "next/link";
 import TaskCard from "@/components/TaskCard";
-import { Filter, Search } from "lucide-react";
+import { Button, Card, CardContent, Badge, Select, Input } from "@/components/ui";
+import { Plus, Search, SlidersHorizontal, ClipboardList } from "lucide-react";
 
 export default function TasksPage() {
   const tasks = useTasks();
@@ -37,80 +38,109 @@ export default function TasksPage() {
       .sort((a, b) => b.latestUpdateAt - a.latestUpdateAt);
   }, [tasks, status, taskType, q]);
 
+  const statusOptions = [
+    { value: "all", label: "All Status" },
+    { value: "open", label: "Open" },
+    { value: "in_progress", label: "In Progress" },
+    { value: "completed", label: "Completed" },
+  ];
+
+  const typeOptions = [
+    { value: "all", label: "All Types" },
+    { value: "preventive", label: "Preventive" },
+    { value: "repair", label: "Repair" },
+  ];
+
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <div className="flex items-start justify-between gap-4">
+    <div className="container mx-auto p-4 lg:p-6 max-w-7xl">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-lg font-semibold text-zinc-900">Tasks</h1>
-          <p className="text-sm text-zinc-600">Create / edit / delete tasks and add updates.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Tasks</h1>
+          <p className="text-muted-foreground">Manage and track maintenance tasks</p>
         </div>
-        <Link
-          href="/tasks/new"
-          className="rounded-xl bg-gradient-to-r from-indigo-700 to-violet-600 px-3 py-2 text-sm font-medium text-white shadow hover:from-indigo-600 hover:to-violet-500"
-        >
-          + New
+        <Link href="/tasks/new">
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            New Task
+          </Button>
         </Link>
       </div>
 
-      <div className="mt-4 rounded-2xl border border-indigo-100 bg-white/90 p-3 shadow-sm">
-        <div className="mb-2 flex items-center gap-2 text-xs font-medium text-indigo-700">
-          <Filter className="h-4 w-4" />
-          Filters
-        </div>
-        <div className="grid gap-3 md:grid-cols-4">
-        <div>
-          <div className="text-xs text-zinc-600">Status</div>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as typeof status)}
-            className="mt-1 h-10 w-full rounded-xl border border-indigo-100 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
-          >
-            <option value="all">All</option>
-            <option value="open">Open</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-          </select>
-        </div>
-
-        <div>
-          <div className="text-xs text-zinc-600">Type</div>
-          <select
-            value={taskType}
-            onChange={(e) => setTaskType(e.target.value as typeof taskType)}
-            className="mt-1 h-10 w-full rounded-xl border border-indigo-100 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
-          >
-            <option value="all">All</option>
-            <option value="preventive">Preventive</option>
-            <option value="repair">Repair</option>
-          </select>
-        </div>
-
-        <div className="md:col-span-2">
-          <div className="text-xs text-zinc-600">Search</div>
-          <div className="mt-1 flex items-center rounded-xl border border-indigo-100 bg-white px-3 focus-within:ring-2 focus-within:ring-indigo-300">
-            <Search className="h-4 w-4 text-indigo-500" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="title, asset, technician..."
-              className="h-10 w-full bg-transparent px-2 text-sm outline-none"
-            />
+      {/* Filters */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <Input
+                icon={<Search className="h-4 w-4" />}
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search tasks, assets, technicians..."
+              />
+            </div>
+            <div className="flex gap-3">
+              <Select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as typeof status)}
+                options={statusOptions}
+              />
+              <Select
+                value={taskType}
+                onChange={(e) => setTaskType(e.target.value as typeof taskType)}
+                options={typeOptions}
+              />
+            </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Results */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">
+            {filtered.length} of {tasks.length} tasks
+          </span>
         </div>
+        <div className="flex gap-2">
+          {status !== "all" && (
+            <Badge variant="outline" className="cursor-pointer" onClick={() => setStatus("all")}>
+              Status: {status} ×
+            </Badge>
+          )}
+          {taskType !== "all" && (
+            <Badge variant="outline" className="cursor-pointer" onClick={() => setTaskType("all")}>
+              Type: {taskType} ×
+            </Badge>
+          )}
         </div>
       </div>
 
-      <div className="mt-4 rounded-2xl border border-indigo-100 bg-white shadow-sm">
+      {/* Task List */}
+      <div className="space-y-3">
         {filtered.length === 0 ? (
-          <div className="p-4 text-sm text-zinc-600">No tasks match your filters.</div>
+          <Card>
+            <CardContent className="p-12 text-center">
+              <ClipboardList className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+              <h3 className="text-lg font-medium mb-1">No tasks found</h3>
+              <p className="text-muted-foreground mb-4">
+                {q || status !== "all" || taskType !== "all"
+                  ? "Try adjusting your filters"
+                  : "Get started by creating your first task"}
+              </p>
+              <Link href="/tasks/new">
+                <Button variant="outline">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Task
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         ) : (
-          <div className="divide-y divide-zinc-200">
-            {filtered.map((t) => (
-              <div key={t.id} className="p-4">
-                <TaskCard task={t} showDue={true} nowMs={nowMs} />
-              </div>
-            ))}
-          </div>
+          filtered.map((t) => (
+            <TaskCard key={t.id} task={t} showDue={true} nowMs={nowMs} />
+          ))
         )}
       </div>
     </div>

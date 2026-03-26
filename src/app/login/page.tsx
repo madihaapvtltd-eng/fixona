@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebaseClient";
-import { KeyRound, UserRound } from "lucide-react";
+import { KeyRound, UserRound, Wrench, ArrowRight } from "lucide-react";
+import { Button, Card, CardContent, CardHeader, CardTitle, CardDescription, Input } from "@/components/ui";
 
 function emailFromUsername(username: string) {
   const domain = (process.env.NEXT_PUBLIC_AUTH_EMAIL_DOMAIN ?? "madmanrep.mv").trim().toLowerCase();
@@ -17,6 +18,7 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,58 +30,78 @@ export default function LoginPage() {
       return;
     }
 
+    setIsLoading(true);
     try {
       const email = emailFromUsername(u);
       await signInWithEmailAndPassword(auth, email, password);
       router.replace("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="mx-auto w-full max-w-md">
-      <div className="rounded-3xl border border-indigo-200 bg-white/95 p-5 shadow-lg shadow-indigo-100">
-        <h1 className="text-xl font-semibold text-indigo-950">Technician Login</h1>
-        <p className="mt-1 text-sm text-indigo-700/80">Use your username and password assigned by admin.</p>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted/50">
+      <div className="w-full max-w-md">
+        {/* Logo Header */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <Wrench className="h-8 w-8 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold text-center">MADMANREP</h1>
+          <p className="text-muted-foreground text-center">Maintenance Management System</p>
+        </div>
 
-        <form onSubmit={onSubmit} className="mt-4 grid gap-3">
-          <div>
-            <label className="text-xs text-zinc-600">Username</label>
-            <div className="mt-1 flex items-center rounded-xl border border-indigo-200 bg-white px-3 focus-within:ring-2 focus-within:ring-indigo-300">
-              <UserRound className="h-4 w-4 text-indigo-500" />
-              <input
+        <Card className="shadow-lg">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-xl">Technician Login</CardTitle>
+            <CardDescription>
+              Enter your credentials to access the dashboard
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={onSubmit} className="space-y-4">
+              <Input
+                label="Username"
+                icon={<UserRound className="h-4 w-4" />}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="e.g. tech11"
-                className="h-10 w-full bg-transparent px-2 text-sm outline-none"
+                autoComplete="username"
               />
-            </div>
-          </div>
 
-          <div>
-            <label className="text-xs text-zinc-600">Password</label>
-            <div className="mt-1 flex items-center rounded-xl border border-indigo-200 bg-white px-3 focus-within:ring-2 focus-within:ring-indigo-300">
-              <KeyRound className="h-4 w-4 text-indigo-500" />
-              <input
+              <Input
+                label="Password"
+                icon={<KeyRound className="h-4 w-4" />}
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Your password"
-                className="h-10 w-full bg-transparent px-2 text-sm outline-none"
+                placeholder="Enter your password"
+                autoComplete="current-password"
               />
-            </div>
-          </div>
 
-          {error ? <div className="text-xs text-red-700">{error}</div> : null}
+              {error && (
+                <div className="text-sm text-red-500 bg-red-50 p-3 rounded-lg">
+                  {error}
+                </div>
+              )}
 
-          <button
-            type="submit"
-            className="rounded-xl bg-gradient-to-r from-indigo-700 to-violet-600 px-4 py-2 text-sm font-medium text-white shadow-md hover:from-indigo-600 hover:to-violet-500"
-          >
-            Sign in
-          </button>
-        </form>
+              <Button 
+                type="submit" 
+                className="w-full"
+                isLoading={isLoading}
+              >
+                Sign in
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <p className="text-center text-sm text-muted-foreground mt-6">
+          Contact admin if you need access credentials
+        </p>
       </div>
     </div>
   );

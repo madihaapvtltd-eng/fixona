@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useTasks } from "@/lib/useTasks";
 import Link from "next/link";
 import TaskCard from "@/components/TaskCard";
+import { Button, Card, CardContent, CardHeader, CardTitle, CardDescription, Badge } from "@/components/ui";
+import { Plus, Clock, CheckCircle2, Circle, AlertCircle } from "lucide-react";
 
 export default function DashboardPage() {
   const tasks = useTasks();
@@ -36,91 +38,134 @@ export default function DashboardPage() {
   }, [tasks]);
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <div className="flex items-start justify-between gap-4">
+    <div className="container mx-auto p-4 lg:p-6 max-w-7xl">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-lg font-semibold text-zinc-900">Dashboard</h1>
-          <p className="text-sm text-zinc-600">Your maintenance overview.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Overview of your maintenance tasks</p>
         </div>
-        <div className="flex gap-2">
-          <Link
-            href="/tasks/new"
-            className="rounded-lg bg-indigo-700 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-600"
-          >
-            + New Task
-          </Link>
-        </div>
+        <Link href="/tasks/new">
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            New Task
+          </Button>
+        </Link>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-indigo-700">Open</div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2a10 10 0 1 0 10 10" />
-                <path d="M12 6v6l4 2" />
-              </svg>
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-3 mb-6">
+        <Card className="border-l-4 border-l-amber-500">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Open Tasks</p>
+                <p className="text-3xl font-bold mt-1">{stats.open}</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
+                <Circle className="h-6 w-6 text-amber-600" />
+              </div>
             </div>
-          </div>
-          <div className="mt-2 text-3xl font-semibold text-indigo-950">{stats.open}</div>
-        </div>
-        <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-blue-700">In progress</div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M4 12a8 8 0 1 0 16 0" />
-                <path d="M12 4v8l5 3" />
-              </svg>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-blue-500">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">In Progress</p>
+                <p className="text-3xl font-bold mt-1">{stats.inProgress}</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <Clock className="h-6 w-6 text-blue-600" />
+              </div>
             </div>
-          </div>
-          <div className="mt-2 text-3xl font-semibold text-blue-950">{stats.inProgress}</div>
-        </div>
-        <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-emerald-700">Completed</div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 6 9 17l-5-5" />
-              </svg>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-green-500">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Completed</p>
+                <p className="text-3xl font-bold mt-1">{stats.completed}</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                <CheckCircle2 className="h-6 w-6 text-green-600" />
+              </div>
             </div>
-          </div>
-          <div className="mt-2 text-3xl font-semibold text-emerald-950">{stats.completed}</div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-zinc-200 bg-white p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-sm font-semibold text-zinc-900">Preventive due</div>
-              <div className="text-xs text-zinc-600">Overdue reminders (based on next reminder date)</div>
+      {/* Two Column Layout */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Preventive Due */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-red-500" />
+                  Preventive Due
+                </CardTitle>
+                <CardDescription>Tasks requiring attention</CardDescription>
+              </div>
+              <Badge variant="outline">{duePreventiveTasks.length}</Badge>
             </div>
-            <div className="text-xs text-zinc-500">{duePreventiveTasks.length} due</div>
-          </div>
-
-          {duePreventiveTasks.length === 0 ? (
-            <div className="mt-3 text-sm text-zinc-600">No preventive tasks due yet. Create one from “New Task”.</div>
-          ) : (
-            <div className="mt-3 space-y-2">
-              {duePreventiveTasks.map((t) => (
-                <TaskCard key={t.id} task={t} showDue={true} nowMs={nowMs} />
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="rounded-xl border border-zinc-200 bg-white p-4">
-          <div className="text-sm font-semibold text-zinc-900">Latest updates</div>
-          <div className="mt-2 space-y-2">
-            {recent.length === 0 ? (
-              <div className="text-sm text-zinc-600">No tasks yet. Create your first task.</div>
+          </CardHeader>
+          <CardContent>
+            {duePreventiveTasks.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <CheckCircle2 className="h-12 w-12 mx-auto mb-3 text-green-500/50" />
+                <p>No preventive tasks due</p>
+                <p className="text-sm mt-1">All caught up!</p>
+              </div>
             ) : (
-              recent.map((t) => <TaskCard key={t.id} task={t} showLatestText={true} />)
+              <div className="space-y-3">
+                {duePreventiveTasks.map((t) => (
+                  <TaskCard key={t.id} task={t} showDue={true} nowMs={nowMs} />
+                ))}
+              </div>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
+
+        {/* Latest Updates */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-primary" />
+                  Latest Updates
+                </CardTitle>
+                <CardDescription>Recently modified tasks</CardDescription>
+              </div>
+              <Badge variant="outline">{recent.length}</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {recent.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Circle className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                <p>No tasks yet</p>
+                <Link href="/tasks/new">
+                  <Button variant="outline" className="mt-3">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create your first task
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recent.map((t) => (
+                  <TaskCard key={t.id} task={t} showLatestText={true} />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
