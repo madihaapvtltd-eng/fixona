@@ -25,18 +25,18 @@ export const firebaseApp = getFirebaseApp();
 export const auth = getAuth(firebaseApp);
 export const db = getFirestore(firebaseApp);
 
-export async function ensureAnonymousAuth() {
+export async function ensureAnonymousAuth(): Promise<{ user: import("firebase/auth").User | null; error?: Error }> {
   // Already signed in?
   const current = auth.currentUser;
-  if (current) return current;
+  if (current) return { user: current };
 
   // Otherwise, sign in anonymously.
   try {
     const cred = await signInAnonymously(auth);
-    return cred.user;
-  } catch {
-    // If it fails, we still allow the app to continue (auth rules may handle other states).
-    return auth.currentUser ?? null;
+    return { user: cred.user };
+  } catch (e) {
+    // If it fails, return error so caller can handle it
+    return { user: auth.currentUser ?? null, error: e as Error };
   }
 }
 

@@ -13,8 +13,13 @@ export function useAssets() {
     let unsub: null | (() => void) = null;
     let alive = true;
 
-    void ensureAnonymousAuth().finally(() => {
+    void ensureAnonymousAuth().then(({ user, error }) => {
       if (!alive) return;
+      if (error || !user) {
+        console.error("Assets hook auth failed:", error);
+        setAssets([]);
+        return;
+      }
 
       unsub = onSnapshot(
         q,
@@ -40,4 +45,3 @@ export function useAssets() {
 
   return assets;
 }
-

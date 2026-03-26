@@ -13,8 +13,13 @@ export function useTechnicians() {
     let unsub: null | (() => void) = null;
     let alive = true;
 
-    void ensureAnonymousAuth().finally(() => {
+    void ensureAnonymousAuth().then(({ user, error }) => {
       if (!alive) return;
+      if (error || !user) {
+        console.error("Technicians hook auth failed:", error);
+        setTechnicians([]);
+        return;
+      }
 
       unsub = onSnapshot(
         q,

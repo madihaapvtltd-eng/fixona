@@ -17,8 +17,13 @@ export function useTask(taskId?: string) {
     let unsub: null | (() => void) = null;
     let alive = true;
 
-    void ensureAnonymousAuth().finally(() => {
+    void ensureAnonymousAuth().then(({ user, error }) => {
       if (!alive) return;
+      if (error || !user) {
+        console.error("Task hook auth failed:", error);
+        setTask(null);
+        return;
+      }
 
       unsub = onSnapshot(
         ref,

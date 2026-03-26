@@ -22,8 +22,13 @@ export function useTaskLogs(taskId?: string) {
     let unsub: null | (() => void) = null;
     let alive = true;
 
-    void ensureAnonymousAuth().finally(() => {
+    void ensureAnonymousAuth().then(({ user, error }) => {
       if (!alive) return;
+      if (error || !user) {
+        console.error("TaskLogs hook auth failed:", error);
+        setLogs([]);
+        return;
+      }
 
       unsub = onSnapshot(
         q,
