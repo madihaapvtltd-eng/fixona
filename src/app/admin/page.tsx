@@ -10,6 +10,8 @@ import type { AssetType, Task, TaskLog, TaskStatus, TaskType } from "@/lib/taskT
 import { useSelectedTechnicianId } from "@/lib/useSelectedTechnician";
 import { auth, onAuthReady } from "@/lib/firebaseClient";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { Button, Card, CardContent, CardHeader, CardTitle, CardDescription, Badge, Input, Select, Separator } from "@/components/ui";
+import { Shield, Users, Plus, ClipboardList, LogOut, KeyRound, AlertCircle } from "lucide-react";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -95,61 +97,71 @@ export default function AdminPage() {
 
   if (!ADMIN_EMAIL) {
     return (
-      <div className="mx-auto w-full max-w-5xl rounded-xl border border-rose-200 bg-white p-4">
-        <div className="text-sm font-semibold text-rose-700">Admin email not configured</div>
-        <div className="mt-2 text-sm text-zinc-600">Set `NEXT_PUBLIC_ADMIN_EMAIL` in your environment.</div>
+      <div className="container mx-auto p-4 lg:p-6 max-w-5xl">
+        <Card className="border-red-200">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+            <h2 className="text-xl font-semibold text-red-700 mb-2">Admin email not configured</h2>
+            <p className="text-muted-foreground">Set NEXT_PUBLIC_ADMIN_EMAIL in your environment.</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  // If a staff user is signed in with a non-admin email, do not show /admin at all.
-  if (shouldRedirect) return null;
-
-  if (authLoading || !isAdmin) {
+  if (authLoading) {
     return (
-      <div className="mx-auto w-full max-w-5xl">
-        <div className="rounded-2xl border border-indigo-200 bg-white p-4 shadow-sm">
-          <div className="text-xl font-semibold text-indigo-950">Admin Login</div>
-          <div className="mt-1 text-sm text-indigo-700/80">Sign in using Firebase Email/Password.</div>
+      <div className="container mx-auto p-4 lg:p-6 max-w-5xl">
+        <div className="flex items-center justify-center h-64">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/30 border-t-primary" />
+        </div>
+      </div>
+    );
+  }
 
-          {authEmail && !isAdmin ? (
-            <div className="mt-3 text-sm text-red-700">
-              Unauthorized email: {authEmail}
+  if (!authEmail || !isAdmin) {
+    return (
+      <div className="container mx-auto p-4 lg:p-6 max-w-md">
+        <Card className="shadow-lg">
+          <CardHeader className="space-y-1">
+            <div className="flex items-center justify-center mb-4">
+              <div className="h-16 w-16 rounded-2xl bg-amber-100 flex items-center justify-center">
+                <Shield className="h-8 w-8 text-amber-600" />
+              </div>
             </div>
-          ) : null}
-
-          <form onSubmit={handleLogin} className="mt-4 grid gap-3 md:grid-cols-2">
-            <div className="md:col-span-2">
-              <label className="text-xs text-zinc-600">Email</label>
-              <input
+            <CardTitle className="text-xl text-center">Admin Access</CardTitle>
+            <CardDescription className="text-center">
+              Enter your admin credentials to continue
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <Input
+                label="Email"
+                type="email"
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="operations@madihaa.mv"
-                className="mt-1 h-10 w-full rounded-lg border border-indigo-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
+                placeholder="admin@example.com"
               />
-            </div>
-            <div className="md:col-span-2">
-              <label className="text-xs text-zinc-600">Password</label>
-              <input
+              <Input
+                label="Password"
                 type="password"
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
-                placeholder="Your password"
-                className="mt-1 h-10 w-full rounded-lg border border-indigo-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
+                placeholder="Enter password"
               />
-            </div>
-
-            {loginError ? <div className="md:col-span-2 text-xs text-red-700">{loginError}</div> : null}
-
-            <div className="md:col-span-2 flex justify-between gap-3">
-              <button
-                type="button"
-                onClick={() => void handleLogout()}
-                className="rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
-              >
-                Sign out
-              </button>
-              <button
+              {loginError && (
+                <div className="text-sm text-red-500 bg-red-50 p-3 rounded-lg">
+                  {loginError}
+                </div>
+              )}
+              <Button type="submit" className="w-full">
+                <KeyRound className="h-4 w-4 mr-2" />
+                Sign in
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
                 type="submit"
                 className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-600"
               >

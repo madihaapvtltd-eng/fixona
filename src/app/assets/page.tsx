@@ -7,6 +7,8 @@ import { useAssets } from "@/lib/useAssets";
 import { assertSmallImage, fileToDataUrl } from "@/lib/imageUtils";
 import { uploadToCloudinaryUnsigned } from "@/lib/cloudinary";
 import { seedMadihaaMasterDataIfEmpty } from "@/lib/assetSeed";
+import { Button, Card, CardContent, CardHeader, CardTitle, Badge, Input, Select, Textarea } from "@/components/ui";
+import { Plus, Search, Wrench, Building2, Edit2, Trash2, Upload, X, Filter } from "lucide-react";
 
 function kindLabel(kind: AssetKind) {
   switch (kind) {
@@ -147,29 +149,31 @@ export default function AssetsPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <div className="flex items-start justify-between gap-4">
+    <div className="container mx-auto p-4 lg:p-6 max-w-7xl">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-semibold text-indigo-950">Assets</h1>
-          <p className="text-sm text-indigo-700/80">
-            Add all items: shop/office/guest house/godown items, chillers, freezers, IT items, AC, etc.
-          </p>
-          <button
-            type="button"
-            onClick={() => seedMadihaaMasterDataIfEmpty()}
-            className="mt-3 inline-flex items-center justify-center rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-medium text-indigo-700 hover:bg-indigo-50"
-          >
-            Import warehouses + outlets
-          </button>
+          <h1 className="text-2xl font-bold tracking-tight">Assets</h1>
+          <p className="text-muted-foreground">Manage equipment, locations, and inventory</p>
         </div>
+        <Button
+          variant="outline"
+          onClick={() => seedMadihaaMasterDataIfEmpty()}
+        >
+          <Building2 className="h-4 w-4 mr-2" />
+          Import Warehouses & Outlets
+        </Button>
       </div>
 
-      <form
-        onSubmit={onCreate}
-        className="mt-4 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-sky-50 p-4 shadow-sm"
-      >
-        <div className="text-sm font-semibold text-indigo-950">Add asset</div>
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
+      {/* Add Asset Form */}
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Plus className="h-5 w-5" />
+            Add New Asset
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="md:col-span-2">
             <div className="text-xs text-zinc-600">Name</div>
             <input
@@ -341,48 +345,47 @@ export default function AssetsPage() {
           </div>
 
           <div className="md:col-span-2 flex justify-end">
-            <button
-              type="submit"
-              className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-600"
-            >
-              Add asset
-            </button>
+            <Button type="submit">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Asset
+            </Button>
           </div>
-        </div>
-      </form>
+        </CardContent>
+      </Card>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <div className="md:col-span-2">
-          <div className="text-xs text-zinc-600">Search</div>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="name, location, serial, brand..."
-            className="mt-1 h-10 w-full rounded-lg border border-indigo-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
-          />
-        </div>
-        <div>
-          <div className="text-xs text-zinc-600">Kind</div>
-          <select
-            value={kind}
-            onChange={(e) => setKind(e.target.value as typeof kind)}
-            className="mt-1 h-10 w-full rounded-lg border border-indigo-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
-          >
-            <option value="all">All</option>
-            <option value="chiller">Chiller</option>
-            <option value="freezer">Freezer</option>
-            <option value="refrigerator">Refrigerator</option>
-            <option value="ac">AC</option>
-            <option value="it">IT Item</option>
-            <option value="chair">Chair</option>
-            <option value="shop">Shop (entity)</option>
-            <option value="office">Office (entity)</option>
-            <option value="guesthouse">Guest House (entity)</option>
-            <option value="godown">Godown (entity)</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-      </div>
+      {/* Filters */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <Input
+                icon={<Search className="h-4 w-4" />}
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search name, location, serial, brand..."
+              />
+            </div>
+            <Select
+              value={kind}
+              onChange={(e) => setKind(e.target.value as typeof kind)}
+              options={[
+                { value: "all", label: "All Types" },
+                { value: "chiller", label: "Chiller" },
+                { value: "freezer", label: "Freezer" },
+                { value: "refrigerator", label: "Refrigerator" },
+                { value: "ac", label: "AC" },
+                { value: "it", label: "IT Item" },
+                { value: "chair", label: "Chair" },
+                { value: "shop", label: "Shop" },
+                { value: "office", label: "Office" },
+                { value: "guesthouse", label: "Guest House" },
+                { value: "godown", label: "Godown" },
+                { value: "other", label: "Other" },
+              ]}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="mt-4 rounded-2xl border border-indigo-200 bg-white shadow-sm">
         {filtered.length === 0 ? (
