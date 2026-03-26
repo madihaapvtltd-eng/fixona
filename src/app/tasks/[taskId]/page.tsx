@@ -13,6 +13,8 @@ import { addTaskLog, deleteTask, makeId, upsertTask } from "@/lib/taskStore";
 import { updateAssetLastServiced } from "@/lib/assetStore";
 import { assertSmallImage } from "@/lib/imageUtils";
 import { uploadToCloudinaryUnsigned } from "@/lib/cloudinary";
+import { Button, Card, CardContent, CardHeader, CardTitle, CardDescription, Badge, Input, Select, Textarea, Separator } from "@/components/ui";
+import { ArrowLeft, Trash2, Calendar, Upload, X, Building2, User, Clock, CheckCircle2, Image as ImageIcon, FileText, AlertCircle } from "lucide-react";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -52,16 +54,20 @@ export default function TaskDetailPage() {
 
   if (!task) {
     return (
-      <div className="mx-auto w-full max-w-5xl">
-        <div className="rounded-xl border border-zinc-200 bg-white p-4">
-          <div className="text-sm font-semibold text-zinc-900">Task not found</div>
-          <div className="mt-2 text-sm text-zinc-600">It may have been deleted.</div>
-          <div className="mt-4">
-            <Link href="/tasks" className="text-sm font-medium text-zinc-900 underline">
-              ← Back to tasks
+      <div className="container mx-auto p-4 lg:p-6 max-w-5xl">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+            <h2 className="text-xl font-semibold mb-2">Task not found</h2>
+            <p className="text-muted-foreground mb-4">It may have been deleted.</p>
+            <Link href="/tasks">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to tasks
+              </Button>
             </Link>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -255,118 +261,94 @@ function TaskEditor({
   };
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Link href="/tasks" className="text-sm font-medium text-zinc-900 underline">
-            ← Tasks
+    <div className="container mx-auto p-4 lg:p-6 max-w-5xl">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Link href="/tasks">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
           </Link>
-          <div className="text-xs text-zinc-500">ID: {task.id}</div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Task Details</h1>
+            <p className="text-muted-foreground text-sm">ID: {task.id}</p>
+          </div>
         </div>
-        <button
-          type="button"
+        <Button
+          variant="outline"
+          size="sm"
           onClick={async () => {
-            await onDelete();
+            if (confirm("Are you sure you want to delete this task?")) {
+              await onDelete();
+            }
           }}
-          className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+          className="text-red-600 hover:text-red-700 hover:bg-red-50"
         >
+          <Trash2 className="h-4 w-4 mr-2" />
           Delete
-        </button>
+        </Button>
       </div>
 
-      <div className="rounded-xl border border-zinc-200 bg-white p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-sm font-semibold text-zinc-900">Task</div>
-            <div className="mt-1 text-lg font-semibold">{task.title}</div>
-            <div className="mt-1 text-xs text-zinc-600">
-              {task.assetType.toUpperCase()} • {task.assetLabel}
-            </div>
-            <div className="mt-1 text-xs text-zinc-500">Assigned: {task.assignedTechnicianName}</div>
-          </div>
-          <div className="text-right">
-            <div className="text-xs text-zinc-600">Status</div>
-            <div className="mt-1 rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700">
-              {task.status.replace("_", " ")}
-            </div>
-            <div className="mt-2 text-xs text-zinc-500">Progress: {task.progressPercent}%</div>
-          </div>
-        </div>
-
-        {task.taskType === "preventive" ? (
-          <div className="mt-4 rounded-lg bg-zinc-50 p-3">
-            <div className="text-xs text-zinc-600">Preventive scheduling</div>
-            <div className="mt-1 text-sm text-zinc-900">
-              Next reminder:{" "}
-              <span className="font-semibold">
-                {typeof task.nextReminderAt === "number" ? new Date(task.nextReminderAt).toLocaleDateString() : "—"}
-              </span>
-            </div>
-          </div>
-        ) : null}
-
-        <div className="mt-4 rounded-lg border border-zinc-200 bg-white p-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-sm font-semibold text-zinc-900">Images (optional)</div>
-              <div className="text-xs text-zinc-600">Uploaded to Cloudinary, stored as URLs.</div>
-            </div>
-            <label className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50 cursor-pointer">
-              + Add
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  const files = Array.from(e.target.files ?? []);
-                  setPendingFiles(files);
-                }}
-              />
-            </label>
-          </div>
-
-          {imageError ? <div className="mt-2 text-xs text-red-700">{imageError}</div> : null}
-
-          <div className="mt-3">
-            <button
-              type="button"
-              onClick={() => void onAddImages()}
-              className="rounded-lg bg-indigo-700 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-600"
-            >
-              Upload selected
-            </button>
-          </div>
-
-          {task.images && task.images.length > 0 ? (
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-              {task.images.map((img) => (
-                <div key={img.id} className="rounded-lg border border-zinc-200 bg-zinc-50 p-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={img.url ?? img.dataUrl ?? ""}
-                    alt={img.name}
-                    className="h-28 w-full rounded-md object-cover bg-white"
-                  />
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <div className="min-w-0 truncate text-[11px] text-zinc-600">{img.name}</div>
-                    <button
-                      type="button"
-                      onClick={() => void onRemoveImage(img.id)}
-                      className="text-[11px] font-medium text-red-700 hover:underline"
-                    >
-                      Remove
-                    </button>
-                  </div>
+      {/* Task Overview Card */}
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="flex-1">
+              <h2 className="text-xl font-semibold mb-2">{task.title}</h2>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <Badge variant={task.status === "completed" ? "success" : task.status === "in_progress" ? "primary" : "outline"}>
+                  {task.status.replace("_", " ")}
+                </Badge>
+                <Badge variant={task.taskType === "preventive" ? "warning" : "default"}>
+                  {task.taskType}
+                </Badge>
+              </div>
+              <div className="space-y-1 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  <span>{task.assetLabel}</span>
                 </div>
-              ))}
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span>Assigned: {task.assignedTechnicianName}</span>
+                </div>
+                {task.taskType === "preventive" && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span>
+                      Next reminder: {typeof task.nextReminderAt === "number" 
+                        ? new Date(task.nextReminderAt).toLocaleDateString() 
+                        : "—"}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-          ) : (
-            <div className="mt-2 text-sm text-zinc-600">No images yet.</div>
-          )}
-        </div>
 
-        <form onSubmit={onSave} className="mt-4 grid gap-4 md:grid-cols-2">
+            {/* Progress */}
+            <div className="w-full md:w-48">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Progress</span>
+                <span className="text-sm font-semibold">{task.progressPercent}%</span>
+              </div>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className={`h-full rounded-full transition-all ${
+                    task.status === "completed" ? "bg-green-500" : 
+                    task.status === "in_progress" ? "bg-blue-500" : "bg-zinc-400"
+                  }`}
+                  style={{ width: `${task.progressPercent}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Left Column - Edit Form */}
+        <div className="lg:col-span-2 space-y-6">
           <div className="md:col-span-2">
             <label className="text-sm font-medium text-zinc-900">Title</label>
             <input
