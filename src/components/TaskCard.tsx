@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import type { Task } from "@/lib/taskTypes";
+import { Badge, Card } from "./ui";
+import { Calendar, User, AlertCircle, Wrench, Building2 } from "lucide-react";
 
 function humanStatus(status: Task["status"]) {
   if (status === "in_progress") return "In Progress";
@@ -17,6 +19,21 @@ function formatDate(ts: number) {
   return new Date(ts).toLocaleDateString();
 }
 
+function getStatusBadgeVariant(status: Task["status"]) {
+  switch (status) {
+    case "completed":
+      return "success";
+    case "in_progress":
+      return "primary";
+    default:
+      return "outline";
+  }
+}
+
+function getTaskTypeBadgeVariant(type: Task["taskType"]) {
+  return type === "preventive" ? "warning" : "default";
+}
+
 export default function TaskCard({
   task,
   nowMs,
@@ -28,66 +45,83 @@ export default function TaskCard({
   showDue?: boolean;
   showLatestText?: boolean;
 }) {
-  const statusStyle =
-    task.status === "completed"
-      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-      : task.status === "in_progress"
-        ? "bg-blue-50 text-blue-700 border-blue-200"
-        : "bg-zinc-100 text-zinc-700 border-zinc-200";
-
   const progressWidth = `${clamp(task.progressPercent ?? 0, 0, 100)}%`;
-
-  let dueLabel: string | null = null;
-  if (showDue && task.taskType === "preventive" && typeof task.nextReminderAt === "number") {
-    const next = task.nextReminderAt;
-    const labelDate = formatDate(next);
-    if (typeof nowMs === "number" && next <= nowMs) dueLabel = `Overdue • ${labelDate}`;
-    else dueLabel = `Due • ${labelDate}`;
-  }
+  const isOverdue = showDue && task.taskType === "preventive" && 
+    typeof task.nextReminderAt === "number" &&
+    typeof nowMs === "number" &&
+    task.nextReminderAt <= nowMs;
 
   return (
-    <Link
-      href={`/tasks/${task.id}`}
-      className="block rounded-xl border border-zinc-200 bg-white p-4 transition hover:bg-zinc-50"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-zinc-900">{task.title}</div>
-          <div className="mt-1 text-xs text-zinc-600">
-            {task.assetType.toUpperCase()} • {task.assetLabel}
+    <Link href={`/tasks/${task.id}`}>
+      <Card hover className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-semibold text-foreground truncate">{task.title}</h3>
+            <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+              <Building2 className="h-3.5 w-3.5" />
+              <span className="truncate">{task.assetLabel}</span>
+            </div>
+            <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+              <User className="h-3.5 w-3.5" />
+              <span>{task.assignedTechnicianName}</span>
+            </div>
           </div>
-          <div className="mt-1 text-[11px] text-zinc-500">Assigned: {task.assignedTechnicianName}</div>
-        </div>
 
-        <div className="flex flex-col items-end gap-2">
-          <div className={`rounded-full border px-3 py-1 text-[11px] font-medium ${statusStyle}`}>
-            {humanStatus(task.status)}
+          <div className="flex flex-col items-end gap-2">
+            <Badge variant={getStatusBadgeVariant(task.status)}>
+              {humanStatus(task.status)}
+            </Badge>
+            <Badge variant={getTaskTypeBadgeVariant(task.taskType)}>
+              {task.taskType === "preventive" ? "Preventive" : "Repair"}
+            </Badge>
           </div>
-          {showDue && dueLabel ? (
-            <div className="text-[11px] text-zinc-500">{dueLabel}</div>
-          ) : (
-            <div className="text-[11px] text-zinc-400">{/* spacing */}</div>
-          )}
         </div>
-      </div>
 
-      <div className="mt-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="text-[11px] font-medium text-zinc-600">Progress</div>
-          <div className="text-[11px] text-zinc-500">{task.progressPercent}%</div>
+        {/* Progress */}
+        <div className="mt-4">
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Progress</span>
+            <span className="text-xs font-semibold">{task.progressPercent}%</span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+            <div 
+              className={`h-full rounded-full transition-all duration-300 ${
+                task.status === "completed" 
+                  ? "bg-green-500" 
+                  : task.status === "in_progress" 
+                    ? "bg-blue-500" 
+                    : "bg-zinc-400"
+              }`} 
+              style={{ width: progressWidth }}
+            />
+          </div>
         </div>
-        <div className="mt-1 h-2 w-full rounded-full bg-zinc-200">
-          <div className="h-2 rounded-full bg-zinc-900" style={{ width: progressWidth }} />
-        </div>
-      </div>
 
-      {showLatestText ? (
-        <div className="mt-3 text-xs text-zinc-700">
-          <div className="text-[11px] text-zinc-500">Latest update</div>
-          <div className="mt-1 line-clamp-2">{task.latestUpdateText}</div>
-          <div className="mt-2 text-[11px] text-zinc-400">{formatDate(task.latestUpdateAt)}</div>
-        </div>
-      ) : null}
+        {/* Due Date / Latest Update */}
+        {showDue && task.taskType === "preventive" && typeof task.nextReminderAt === "number" && (
+          <div className={`mt-3 flex items-center gap-2 text-xs ${isOverdue ? "text-red-500" : "text-muted-foreground"}`}>
+            <Calendar className="h-3.5 w-3.5" />
+            <span>
+              {isOverdue ? (
+                <>
+                  <AlertCircle className="h-3.5 w-3.5 inline mr-1" />
+                  Overdue • {formatDate(task.nextReminderAt)}
+                </>
+              ) : (
+                `Due ${formatDate(task.nextReminderAt)}`
+              )}
+            </span>
+          </div>
+        )}
+
+        {showLatestText && (
+          <div className="mt-3 pt-3 border-t border-border">
+            <div className="text-xs font-medium text-muted-foreground mb-1">Latest update</div>
+            <p className="text-sm text-foreground line-clamp-2">{task.latestUpdateText}</p>
+            <div className="mt-2 text-xs text-muted-foreground">{formatDate(task.latestUpdateAt)}</div>
+          </div>
+        )}
+      </Card>
     </Link>
   );
 }
