@@ -150,7 +150,7 @@ export default function NewTaskPage() {
   return (
     <div className="mx-auto w-full max-w-5xl">
       <h1 className="text-lg font-semibold text-zinc-900">Create Task</h1>
-      <p className="text-sm text-zinc-600">No login needed. Data saved in your browser (localStorage).</p>
+      <p className="text-sm text-zinc-600">Data is saved to Firebase (Firestore).</p>
 
       <form onSubmit={onSubmit} className="mt-4 grid gap-4 md:grid-cols-2">
         <div className="md:col-span-2">
@@ -163,7 +163,9 @@ export default function NewTaskPage() {
         </div>
 
         <div className="md:col-span-2">
-          <label className="text-sm font-medium text-zinc-900">Select Asset (optional)</label>
+          <label className="text-sm font-medium text-zinc-900">
+            Select Asset (optional) {assets.length > 0 && <span className="text-xs font-normal text-zinc-500">({assets.length} available)</span>}
+          </label>
           <select
             value={assetId}
             onChange={(e) => {
