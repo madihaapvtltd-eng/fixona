@@ -68,6 +68,29 @@ export default function AssetsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Partial<Asset>>({});
 
+  const locationNameSuggestionsByType = useMemo(() => {
+    const map: Record<AssetLocationType, string[]> = {
+      shop: [],
+      office: [],
+      guesthouse: [],
+      godown: [],
+      other: [],
+    };
+
+    for (const a of assets) {
+      const type = a.locationType;
+      const name = (a.locationName ?? "").trim();
+      if (!name) continue;
+      if (!map[type].includes(name)) map[type].push(name);
+    }
+
+    for (const k of Object.keys(map) as AssetLocationType[]) {
+      map[k].sort((a, b) => a.localeCompare(b));
+    }
+
+    return map;
+  }, [assets]);
+
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
     return assets
@@ -227,8 +250,14 @@ export default function AssetsPage() {
               value={newLocationName}
               onChange={(e) => setNewLocationName(e.target.value)}
               placeholder="e.g. Shop 1 / Main Office / Guest house 2"
+              list="asset-location-name-suggestions"
               className="mt-1 h-10 w-full rounded-lg border border-indigo-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
             />
+            <datalist id="asset-location-name-suggestions">
+              {locationNameSuggestionsByType[newLocationType].map((n) => (
+                <option key={`${newLocationType}:${n}`} value={n} />
+              ))}
+            </datalist>
           </div>
 
           <div>
@@ -533,8 +562,19 @@ export default function AssetsPage() {
                         <input
                           value={(editing.locationName as string) ?? a.locationName}
                           onChange={(e) => setEditing((p) => ({ ...p, locationName: e.target.value }))}
+                          list={`asset-location-name-suggestions-${a.id}`}
                           className="mt-1 h-10 w-full rounded-lg border border-indigo-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
                         />
+                        <datalist id={`asset-location-name-suggestions-${a.id}`}>
+                          {locationNameSuggestionsByType[
+                            ((editing.locationType as AssetLocationType) ?? a.locationType) as AssetLocationType
+                          ].map((n) => (
+                            <option
+                              key={`${((editing.locationType as AssetLocationType) ?? a.locationType) as AssetLocationType}:${n}`}
+                              value={n}
+                            />
+                          ))}
+                        </datalist>
                       </div>
 
                       <div>
