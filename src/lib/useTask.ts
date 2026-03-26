@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Task } from "@/lib/taskTypes";
-import { db } from "@/lib/firebaseClient";
+import { db, ensureAnonymousAuth } from "@/lib/firebaseClient";
 import { doc, onSnapshot } from "firebase/firestore";
 
 export function useTask(taskId?: string) {
@@ -14,15 +14,32 @@ export function useTask(taskId?: string) {
     }
 
     const ref = doc(db, "tasks", taskId);
-    const unsub = onSnapshot(ref, (d) => {
-      if (!d.exists()) {
-        setTask(null);
-        return;
-      }
-      setTask({ id: d.id, ...(d.data() as Omit<Task, "id">) });
+    let unsub: null | (() => void) = null;
+    let alive = true;
+
+    void ensureAnonymousAuth().finally(() => {
+      if (!alive) return;
+
+      unsub = onSnapshot(
+        ref,
+        (d) => {
+          if (!d.exists()) {
+            setTask(null);
+            return;
+          }
+          setTask({ id: d.id, ...(d.data() as Omit<Task, "id">) });
+        },
+        (err) => {
+          console.error("Firestore task snapshot error", err);
+          setTask(null);
+        },
+      );
     });
 
-    return () => unsub();
+    return () => {
+      alive = false;
+      unsub?.();
+    };
   }, [taskId]);
 
   return task;

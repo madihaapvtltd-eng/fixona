@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Technician } from "@/lib/technicians";
-import { db } from "@/lib/firebaseClient";
+import { db, ensureAnonymousAuth } from "@/lib/firebaseClient";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 
 export function useTechnicians() {
@@ -10,13 +10,30 @@ export function useTechnicians() {
 
   useEffect(() => {
     const q = query(collection(db, "technicians"), orderBy("name", "asc"));
-    const unsub = onSnapshot(q, (snap) => {
-      const next: Technician[] = [];
-      snap.forEach((doc) => next.push({ id: doc.id, ...(doc.data() as Omit<Technician, "id">) }));
-      setTechnicians(next);
+    let unsub: null | (() => void) = null;
+    let alive = true;
+
+    void ensureAnonymousAuth().finally(() => {
+      if (!alive) return;
+
+      unsub = onSnapshot(
+        q,
+        (snap) => {
+          const next: Technician[] = [];
+          snap.forEach((doc) => next.push({ id: doc.id, ...(doc.data() as Omit<Technician, "id">) }));
+          setTechnicians(next);
+        },
+        (err) => {
+          console.error("Firestore technicians snapshot error", err);
+          setTechnicians([]);
+        },
+      );
     });
 
-    return () => unsub();
+    return () => {
+      alive = false;
+      unsub?.();
+    };
   }, []);
 
   return technicians;

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Task } from "@/lib/taskTypes";
-import { db } from "@/lib/firebaseClient";
+import { db, ensureAnonymousAuth } from "@/lib/firebaseClient";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 
 export function useTasks() {
@@ -10,14 +10,32 @@ export function useTasks() {
 
   useEffect(() => {
     const q = query(collection(db, "tasks"), orderBy("latestUpdateAt", "desc"));
-    const unsub = onSnapshot(q, (snap) => {
-      const next: Task[] = [];
-      snap.forEach((doc) => {
-        next.push({ id: doc.id, ...(doc.data() as Omit<Task, "id">) });
-      });
-      setTasks(next);
+    let unsub: null | (() => void) = null;
+    let alive = true;
+
+    void ensureAnonymousAuth().finally(() => {
+      if (!alive) return;
+
+      unsub = onSnapshot(
+        q,
+        (snap) => {
+          const next: Task[] = [];
+          snap.forEach((doc) => {
+            next.push({ id: doc.id, ...(doc.data() as Omit<Task, "id">) });
+          });
+          setTasks(next);
+        },
+        (err) => {
+          console.error("Firestore tasks snapshot error", err);
+          setTasks([]);
+        },
+      );
     });
-    return () => unsub();
+
+    return () => {
+      alive = false;
+      unsub?.();
+    };
   }, []);
 
   return tasks;
