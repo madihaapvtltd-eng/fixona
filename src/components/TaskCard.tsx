@@ -24,7 +24,7 @@ function getStatusBadgeVariant(status: Task["status"]) {
     case "completed":
       return "success";
     case "in_progress":
-      return "primary";
+      return "warning";
     default:
       return "outline";
   }
