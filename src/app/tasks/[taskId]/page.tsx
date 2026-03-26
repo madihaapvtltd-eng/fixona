@@ -297,7 +297,7 @@ function TaskEditor({
             <div className="flex-1">
               <h2 className="text-xl font-semibold mb-2">{task.title}</h2>
               <div className="flex flex-wrap gap-2 mb-3">
-                <Badge variant={task.status === "completed" ? "success" : task.status === "in_progress" ? "primary" : "outline"}>
+                <Badge variant={task.status === "completed" ? "success" : task.status === "in_progress" ? "warning" : "outline"}>
                   {task.status.replace("_", " ")}
                 </Badge>
                 <Badge variant={task.taskType === "preventive" ? "warning" : "default"}>
