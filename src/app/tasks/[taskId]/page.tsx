@@ -529,9 +529,9 @@ function TaskEditor({
             </button>
           </div>
         </form>
-      </div>
 
-      {/* Right Column - Images & Activity */}
+        {/* Right Column - Timeline */}
+        <div className="space-y-6">
         <div className="flex items-center justify-between gap-3">
           <div className="text-sm font-semibold text-zinc-900">Timeline</div>
           <div className="text-xs text-zinc-500">{logs.length} logs</div>
@@ -556,6 +556,7 @@ function TaskEditor({
             ))}
           </div>
         )}
+        </div>
       </div>
     </div>
   );
