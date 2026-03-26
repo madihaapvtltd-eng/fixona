@@ -348,7 +348,7 @@ function TaskEditor({
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left Column - Edit Form */}
-        <div className="lg:col-span-2 space-y-6">
+        <form onSubmit={onSave} className="lg:col-span-2 space-y-6">
           <div className="md:col-span-2">
             <label className="text-sm font-medium text-zinc-900">Title</label>
             <input
@@ -531,7 +531,7 @@ function TaskEditor({
         </form>
       </div>
 
-      <div className="mt-4 rounded-xl border border-zinc-200 bg-white p-4">
+      {/* Right Column - Images & Activity */}
         <div className="flex items-center justify-between gap-3">
           <div className="text-sm font-semibold text-zinc-900">Timeline</div>
           <div className="text-xs text-zinc-500">{logs.length} logs</div>

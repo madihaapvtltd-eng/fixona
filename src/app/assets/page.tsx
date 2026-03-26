@@ -174,6 +174,7 @@ export default function AssetsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <div className="text-xs text-zinc-600">Name</div>
             <input
@@ -349,6 +350,7 @@ export default function AssetsPage() {
               <Plus className="h-4 w-4 mr-2" />
               Add Asset
             </Button>
+          </div>
           </div>
         </CardContent>
       </Card>

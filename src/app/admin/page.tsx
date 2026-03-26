@@ -162,18 +162,6 @@ export default function AdminPage() {
             </form>
           </CardContent>
         </Card>
-                type="submit"
-                className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-600"
-              >
-                Sign in as admin
-              </button>
-            </div>
-          </form>
-
-          <div className="mt-3 text-xs text-zinc-500">
-            Admin email must match: <span className="font-medium">{ADMIN_EMAIL}</span>
-          </div>
-        </div>
       </div>
     );
   }

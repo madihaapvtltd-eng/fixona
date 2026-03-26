@@ -10,7 +10,7 @@ import { useAssets } from "@/lib/useAssets";
 import { assertSmallImage, fileToDataUrl } from "@/lib/imageUtils";
 import { updateAssetLastServiced } from "@/lib/assetStore";
 import { uploadToCloudinaryUnsigned } from "@/lib/cloudinary";
-import { Button, Card, CardContent, Input, Select, Textarea, Badge } from "@/components/ui";
+import { Button, Card, CardContent, Input, Select, Textarea, Badge, Combobox } from "@/components/ui";
 import { ArrowLeft, Calendar, Upload, X, Wrench, Building2 } from "lucide-react";
 import Link from "next/link";
 
@@ -230,11 +230,13 @@ export default function NewTaskPage() {
               </div>
 
               <div className="md:col-span-2">
-                <Select
+                <Combobox
                   label={`Select Asset (optional) ${assets.length > 0 ? `(${assets.length} available)` : ""}`}
+                  placeholder="— No asset selected —"
                   value={assetId}
-                  onChange={(e) => handleAssetChange(e.target.value)}
+                  onChange={handleAssetChange}
                   options={assetOptions}
+                  searchable
                 />
                 {selectedAsset && (
                   <p className="text-xs text-muted-foreground mt-1">
@@ -299,7 +301,7 @@ export default function NewTaskPage() {
                     onChange={(e) => setProgressPercent(Number(e.target.value))}
                     className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
                   />
-                  <Badge variant="primary">{progressPercent}%</Badge>
+                  <Badge>{progressPercent}%</Badge>
                 </div>
               </div>
 
