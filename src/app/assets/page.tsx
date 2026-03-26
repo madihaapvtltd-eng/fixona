@@ -91,6 +91,16 @@ export default function AssetsPage() {
     return map;
   }, [assets]);
 
+  useEffect(() => {
+    const nextSuggestions = locationNameSuggestionsByType[newLocationType] ?? [];
+    if (nextSuggestions.length === 0) return;
+
+    const current = (newLocationName ?? "").trim();
+    if (!current || !nextSuggestions.includes(current)) {
+      setNewLocationName(nextSuggestions[0]);
+    }
+  }, [locationNameSuggestionsByType, newLocationType, newLocationName]);
+
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
     return assets
@@ -544,9 +554,21 @@ export default function AssetsPage() {
                         <div className="text-xs text-zinc-600">Location type</div>
                         <select
                           value={(editing.locationType as AssetLocationType) ?? a.locationType}
-                          onChange={(e) =>
-                            setEditing((p) => ({ ...p, locationType: e.target.value as AssetLocationType }))
-                          }
+                          onChange={(e) => {
+                            const nextType = e.target.value as AssetLocationType;
+                            const nextSuggestions = locationNameSuggestionsByType[nextType] ?? [];
+                            const currentName = (p: Partial<Asset>) => ((p.locationName as string) ?? a.locationName);
+
+                            setEditing((p) => {
+                              const name = (currentName(p) ?? "").trim();
+                              const shouldReplace = !name || (nextSuggestions.length > 0 && !nextSuggestions.includes(name));
+                              return {
+                                ...p,
+                                locationType: nextType,
+                                locationName: shouldReplace && nextSuggestions.length > 0 ? nextSuggestions[0] : name,
+                              };
+                            });
+                          }}
                           className="mt-1 h-10 w-full rounded-lg border border-indigo-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
                         >
                           <option value="shop">Shop</option>
