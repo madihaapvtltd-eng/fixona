@@ -1,57 +1,103 @@
-# Madihaa Maintenance & Repair
+# Fixora - Built for Zero Downtime
 
-Maintenance tracking app for **Madihaa PVT LTD** (7 shops, chillers/freezers, 2 guest houses) built with **Firebase (Firestore)** and **Cloudinary**.
+Fixora is a comprehensive maintenance management system for tracking work orders, assets, and maintenance operations. Built for Zero Downtime.
 
-This repo contains a **local MVP** for staff usage:
-- Responsive UI (side navigation on desktop, bottom navigation on mobile)
-- Technician login with Firebase Email/Password (username + password)
-- Technician identity is locked to the logged-in technician (so tasks show who created/updated them)
-- Assets section (CRUD) to register all company items with location + details
-- Task CRUD + task timeline logs
-- Preventive task scheduling with automatic “Due / Overdue” labels (MVP logic)
-- Optional task images (preview + Cloudinary image upload + URLs stored)
+## Overview
 
-## Admin dashboard security
-`/admin` is protected with Firebase **Email/Password**.
+This Fixora CMMS system provides a complete solution for managing maintenance workflows across organizations. It supports multiple user roles, real-time notifications, asset tracking with QR codes, and a detailed purchase workflow for maintenance parts.
 
-1) Enable **Email/Password** in Firebase Authentication.
-2) Create the admin user in Firebase Auth (example: `operations@madihaa.mv`) with the password you want.
-3) Set `NEXT_PUBLIC_ADMIN_EMAIL` in your environment to that admin email.
-4) Login at `https://<your-domain>/admin`.
+## Features
 
-Note: for production, you should also add **Firestore Security Rules** so only the admin can create/update/delete users and tasks via the API.
+- **Multi-Role Support**: Super Admin, Admin, Supervisor, Technician, Purchasing, User
+- **Work Order Management**: Full lifecycle from creation to completion
+- **Asset Management**: Track assets with QR codes and maintenance history
+- **Purchase Workflow**: Detailed multi-stage purchase approval process
+- **Real-time Notifications**: Instant updates for assignments and status changes
+- **Mobile Responsive**: Works on desktop, tablet, and mobile devices
+- **Activity History**: Complete audit trail with user names and timestamps
+- **Image Uploads**: Attach photos to work orders and completion reports
 
-See [`USER_MANUAL.md`](./USER_MANUAL.md) for how staff should use the app.
+## Tech Stack
 
-## Local development (Technician login)
+- **Frontend**: React, TypeScript, Tailwind CSS
+- **Backend**: Firebase (Firestore, Authentication, Storage)
+- **Mobile**: React Native (Expo)
+- **Build Tool**: Vite
 
-### 1. Install dependencies
+## Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+- Git
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd fixora
+```
+
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-### 2. Run the dev server
+3. Set up Firebase (see SETUP_GUIDE.md for detailed instructions)
+
+4. Start the development server:
 ```bash
-npx next dev -p 3000
+cd web
+npm run dev
 ```
 
-Open: `http://localhost:3000`
+5. Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-## Test flow (what you can do right now)
-1. Login at `/login` using the username + password created by admin.
-2. Add your assets in **Assets** (chillers/freezers/refrigerator/AC/IT items/chairs + shop/office/guest house/godown locations).
-3. Go to **New Task**.
-4. Create a **Repair** or **Preventive** task, assign it to a technician, optionally select an asset, set:
-   - logged date
-   - progress %
-   - status
-   - latest update text
-   - optional image
-5. Open the task to add updates and view the timeline.
-6. On the dashboard, preventive tasks appear under **Preventive due** when their computed next reminder date is reached.
+## Project Structure
 
-## Next steps (after local MVP)
-The next iteration will connect:
-- Role-based authorization (admin-only actions)
-- Automatic reminder generation/scheduling
-- Hardening Firestore Security Rules for production
+```
+cmms/
+├── web/                    # Web application (React + Vite)
+│   ├── src/
+│   │   ├── components/     # Reusable UI components
+│   │   ├── pages/          # Page components
+│   │   ├── lib/            # Utility functions and configs
+│   │   ├── hooks/          # Custom React hooks
+│   │   └── stores/         # State management
+│   └── package.json
+├── mobile/                 # Mobile application (React Native)
+├── firebase/               # Firebase functions and config
+├── shared/                 # Shared types and utilities
+├── SETUP_GUIDE.md          # Detailed setup instructions
+├── USER_MANUAL.md          # How to use the system
+├── HANDBOOK.md             # Comprehensive guide
+└── CHANGELOG.md            # Version history
+```
+
+## User Roles & Permissions
+
+| Role | Permissions |
+|------|-------------|
+| **Super Admin** | Full system access, can delete work orders and assets |
+| **Admin** | Manage work orders, approve quotations, process payments |
+| **Supervisor** | Assign technicians, request quotations, approve purchases |
+| **Technician** | Start work, mark status, submit purchase requests |
+| **Purchasing** | Get quotations, purchase items, collect from suppliers |
+| **User** | Create work orders, view own requests |
+
+## Documentation
+
+- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Step-by-step setup instructions
+- **[USER_MANUAL.md](USER_MANUAL.md)** - How to use each feature
+- **[HANDBOOK.md](HANDBOOK.md)** - Comprehensive system guide
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and updates
+
+## License
+
+MIT License - See LICENSE file for details.
+
+## Support
+
+For support and questions, please contact the system administrator or refer to the documentation files above.
