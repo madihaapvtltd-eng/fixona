@@ -150,12 +150,6 @@ export function LoginPage() {
           {loading ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
-
-      <div className="text-center text-sm text-gray-500">
-        <p>Demo accounts:</p>
-        <p>admin@fixora.com / password</p>
-        <p>tech@fixora.com / password</p>
-      </div>
     </div>
   );
 }
