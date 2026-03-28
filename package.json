@@ -9,6 +9,7 @@
     "firebase"
   ],
   "scripts": {
+    "build": "cd web && npm install && npm run build",
     "dev:web": "cd web && npm run dev",
     "dev:mobile": "cd mobile && npx expo start",
     "build:web": "cd web && npm run build",
