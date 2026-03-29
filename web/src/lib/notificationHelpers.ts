@@ -1,4 +1,5 @@
 import { createNotification } from '@/hooks/useNotifications';
+import { notificationSound } from './notificationSound';
 
 export async function notifyWorkOrderCreated(
   workOrderId: string,
@@ -7,6 +8,7 @@ export async function notifyWorkOrderCreated(
   createdByName: string,
   department: string
 ) {
+  notificationSound.info();
   await createNotification({
     type: 'workorder_created',
     title: `New Work Order Created: ${woNumber}`,
@@ -29,6 +31,7 @@ export async function notifyWorkOrderAssigned(
   assigneeId: string,
   role: 'supervisor' | 'technician'
 ) {
+  notificationSound.newAssignment();
   await createNotification({
     type: 'workorder_assigned',
     title: `Work Order Assigned: ${woNumber}`,
@@ -50,6 +53,7 @@ export async function notifyStatusChanged(
   updatedByName: string,
   comment?: string
 ) {
+  notificationSound.statusChange();
   await createNotification({
     type: 'status_changed',
     title: `Status Updated: ${woNumber}`,
@@ -68,6 +72,7 @@ export async function notifyWorkOrderCompleted(
   title: string,
   completedByName: string
 ) {
+  notificationSound.success();
   await createNotification({
     type: 'workorder_completed',
     title: `Work Order Completed: ${woNumber}`,
@@ -87,6 +92,7 @@ export async function notifyCommentAdded(
   comment: string,
   addedByName: string
 ) {
+  notificationSound.info();
   await createNotification({
     type: 'comment_added',
     title: `New Comment on ${woNumber}`,
@@ -105,6 +111,7 @@ export async function notifyPurchaseRequest(
   title: string,
   requestedByName: string
 ) {
+  notificationSound.warning();
   // Notify supervisor and admin about purchase request
   await createNotification({
     type: 'purchase_request',

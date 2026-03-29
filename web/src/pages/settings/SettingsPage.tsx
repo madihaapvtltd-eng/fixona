@@ -2,7 +2,8 @@ import { useAuthStore } from '@/stores/authStore';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Users, Shield, Bell, Info, Building2, Calculator } from 'lucide-react';
+import { Users, Shield, Bell, Info, Building2, Calculator, Volume2, VolumeX } from 'lucide-react';
+import { useNotificationSound } from '@/lib/notificationSound';
 
 export function SettingsPage() {
   const { user } = useAuthStore();
@@ -11,6 +12,7 @@ export function SettingsPage() {
     push: true,
     whatsapp: false,
   });
+  const { isEnabled, toggle, enable } = useNotificationSound();
 
   const handleSave = () => {
     toast.success('Settings saved successfully');
@@ -172,6 +174,42 @@ export function SettingsPage() {
                   notifications.whatsapp ? 'translate-x-6' : 'translate-x-1'
                 }`}
               />
+            </button>
+          </div>
+
+          {/* Notification Sound Toggle */}
+          <div className="flex items-center justify-between pt-2 border-t">
+            <div>
+              <p className="font-medium">Notification Sounds</p>
+              <p className="text-sm text-gray-500">Play sound for new notifications</p>
+            </div>
+            <button
+              onClick={() => {
+                toggle();
+                if (!isEnabled) {
+                  enable();
+                  toast.success('Notification sounds enabled');
+                } else {
+                  toast.success('Notification sounds disabled');
+                }
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                isEnabled 
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {isEnabled ? (
+                <>
+                  <Volume2 className="h-5 w-5" />
+                  <span>On</span>
+                </>
+              ) : (
+                <>
+                  <VolumeX className="h-5 w-5" />
+                  <span>Off</span>
+                </>
+              )}
             </button>
           </div>
         </div>
