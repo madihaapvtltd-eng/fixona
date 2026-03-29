@@ -167,22 +167,110 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Main content */}
       <div className="lg:pl-64 flex flex-col flex-1">
-        {/* Top header */}
+        {/* Top header - Mobile */}
         <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white border-b border-gray-200 lg:hidden">
           <button
             type="button"
-            className="px-4 border-r border-gray-200 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 lg:hidden"
+            className="px-4 border-r border-gray-200 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="h-6 w-6" />
           </button>
-          <div className="flex-1 flex justify-between px-4">
-            <div className="flex-1 flex items-center">
-              <Link to="/" className="flex items-center gap-2">
-                <Logo className="h-8 w-8" />
-                <span className="text-xl font-bold text-gray-900">Fixora</span>
-              </Link>
+          <div className="flex-1 flex items-center px-4">
+            <Link to="/" className="flex items-center gap-2">
+              <Logo className="h-8 w-8" />
+              <span className="text-xl font-bold text-gray-900">Fixora</span>
+            </Link>
+          </div>
+          
+          {/* Mobile: Notification Bell */}
+          <div className="flex items-center">
+            <div className="relative" ref={notificationRef}>
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="p-3 text-gray-600 hover:text-gray-900 relative"
+              >
+                <Bell className="h-6 w-6" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+              
+              {/* Notifications Dropdown - Mobile */}
+              {showNotifications && (
+                <div className="fixed inset-x-4 top-16 mt-2 bg-white rounded-xl shadow-xl border border-gray-200 z-50 max-h-[400px] overflow-hidden sm:absolute sm:right-0 sm:left-auto sm:w-96 sm:inset-x-auto">
+                  <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50 rounded-t-xl">
+                    <h3 className="font-semibold text-gray-900">Notifications</h3>
+                    {unreadCount > 0 && (
+                      <button 
+                        onClick={markAllAsRead}
+                        className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+                  <div className="overflow-y-auto max-h-[300px]">
+                    {notifications.length === 0 ? (
+                      <p className="p-8 text-center text-gray-500 text-sm">No notifications yet</p>
+                    ) : (
+                      notifications.map((notif) => (
+                        <div 
+                          key={notif.id}
+                          onClick={() => {
+                            markAsRead(notif.id);
+                            navigate(`/work-orders/${notif.workOrderId}`);
+                            setShowNotifications(false);
+                          }}
+                          className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
+                            !notif.read ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`p-2 rounded-lg ${
+                              notif.type === 'workorder_created' ? 'bg-purple-100 text-purple-600' :
+                              notif.type === 'workorder_assigned' ? 'bg-blue-100 text-blue-600' :
+                              notif.type === 'workorder_completed' ? 'bg-green-100 text-green-600' :
+                              'bg-gray-100 text-gray-600'
+                            }`}>
+                              {notif.type === 'workorder_created' ? <CheckCircle className="h-4 w-4" /> :
+                               notif.type === 'workorder_assigned' ? <User className="h-4 w-4" /> :
+                               notif.type === 'workorder_completed' ? <CheckSquare className="h-4 w-4" /> :
+                               <AlertCircle className="h-4 w-4" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900">
+                                {notif.title}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {notif.message}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {notif.createdAt?.toDate ? notif.createdAt.toDate().toLocaleString() : 'Just now'}
+                              </p>
+                            </div>
+                            {!notif.read && (
+                              <div className="h-2 w-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
+            
+            {/* Mobile: Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="p-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg mx-2"
+              title="Logout"
+            >
+              <LogOut className="h-6 w-6" />
+            </button>
           </div>
         </div>
 
