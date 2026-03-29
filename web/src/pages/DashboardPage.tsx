@@ -197,6 +197,51 @@ export function DashboardPage() {
     .map(([name, value]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), count: value as number }))
     .filter((d) => d.count > 0);
 
+  // Cost data by month (last 6 months)
+  const costData = (() => {
+    const months: Record<string, { month: string; cost: number; count: number }> = {};
+    const now = new Date();
+    
+    // Initialize last 6 months
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = format(d, 'MMM yyyy');
+      months[key] = { month: key, cost: 0, count: 0 };
+    }
+    
+    // Aggregate completed work order costs
+    stats?.workOrdersList?.forEach((wo: DocumentData) => {
+      if (wo.status === 'completed' && wo.completedAt) {
+        const date = wo.completedAt.toDate ? wo.completedAt.toDate() : new Date(wo.completedAt);
+        const key = format(date, 'MMM yyyy');
+        if (months[key]) {
+          months[key].cost += (wo.cost || wo.finalCost || 0);
+          months[key].count += 1;
+        }
+      }
+    });
+    
+    return Object.values(months);
+  })();
+
+  // Department breakdown
+  const departmentData = (() => {
+    const depts: Record<string, { name: string; workOrders: number; cost: number }> = {};
+    
+    stats?.workOrdersList?.forEach((wo: DocumentData) => {
+      const dept = wo.department || 'Unassigned';
+      if (!depts[dept]) {
+        depts[dept] = { name: dept, workOrders: 0, cost: 0 };
+      }
+      depts[dept].workOrders += 1;
+      if (wo.status === 'completed') {
+        depts[dept].cost += (wo.cost || wo.finalCost || 0);
+      }
+    });
+    
+    return Object.values(depts).sort((a, b) => b.workOrders - a.workOrders).slice(0, 8);
+  })();
+
   return (
     <div className="space-y-6">
       {/* Welcome Banner with Storyset Illustration */}
@@ -325,6 +370,41 @@ export function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Cost Trends Chart */}
+      <div className="card">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Maintenance Costs (Last 6 Months)</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={costData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis tickFormatter={(value) => `MVR ${value.toLocaleString()}`} />
+              <Tooltip formatter={(value: number) => `MVR ${value.toLocaleString()}`} />
+              <Bar dataKey="cost" fill="#10b981" name="Total Cost" />
+              <Bar dataKey="count" fill="#3b82f6" name="Completed WO" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Department Breakdown */}
+      {departmentData.length > 0 && (
+        <div className="card">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Work Orders by Department</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={departmentData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="name" type="category" width={100} />
+                <Tooltip />
+                <Bar dataKey="workOrders" fill="#8b5cf6" name="Work Orders" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* Recent Work Orders */}
       <div className="card">
