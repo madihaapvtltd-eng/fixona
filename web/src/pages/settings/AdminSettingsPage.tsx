@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Settings, MapPin, Building2, Plus, Trash2, Save, Edit2, Download, AlertTriangle } from 'lucide-react';
+import { Settings, MapPin, Building2, Plus, Trash2, Save, Edit2, Download, AlertTriangle, Table2 } from 'lucide-react';
 import { ALL_LOCATIONS } from '@/lib/locations';
 import toast from 'react-hot-toast';
 
@@ -15,6 +15,9 @@ export function AdminSettingsPage() {
   const [editShortName, setEditShortName] = useState('');
   const [importing, setImporting] = useState(false);
   const [removingDuplicates, setRemovingDuplicates] = useState(false);
+  const [bulkEditMode, setBulkEditMode] = useState(false);
+  const [bulkEdits, setBulkEdits] = useState<Record<string, { label: string; value: string; type: string; shortName: string }>>({});
+  const [savingBulk, setSavingBulk] = useState(false);
 
   // Count duplicates for display
   const duplicateCount = locations.length - new Set(locations.map(l => l.value)).size;
@@ -113,6 +116,49 @@ export function AdminSettingsPage() {
     } finally {
       setImporting(false);
     }
+  };
+
+  const saveBulkEdits = async () => {
+    if (savingBulk) return;
+    setSavingBulk(true);
+    
+    try {
+      let updated = 0;
+      for (const [id, data] of Object.entries(bulkEdits)) {
+        if (data.value.trim() && data.label.trim()) {
+          await updateDoc(doc(db, 'settings', 'locations', 'items', id), {
+            value: data.value.trim(),
+            label: data.label.trim(),
+            type: data.type,
+            shortName: data.shortName.trim()
+          });
+          updated++;
+        }
+      }
+      
+      await loadSettings();
+      setBulkEditMode(false);
+      setBulkEdits({});
+      toast.success(`Updated ${updated} locations`);
+    } catch (error) {
+      toast.error('Failed to save changes');
+    } finally {
+      setSavingBulk(false);
+    }
+  };
+
+  const startBulkEdit = () => {
+    const initial: Record<string, { label: string; value: string; type: string; shortName: string }> = {};
+    locations.forEach(loc => {
+      initial[loc.id] = {
+        label: loc.label || '',
+        value: loc.value || '',
+        type: loc.type || 'other',
+        shortName: loc.shortName || ''
+      };
+    });
+    setBulkEdits(initial);
+    setBulkEditMode(true);
   };
 
   const removeDuplicates = async () => {
@@ -230,8 +276,112 @@ export function AdminSettingsPage() {
             {removingDuplicates ? 'Removing...' : `Remove ${duplicateCount} Duplicates`}
           </button>
         )}
+        <button
+          onClick={bulkEditMode ? () => setBulkEditMode(false) : startBulkEdit}
+          className="btn btn-secondary inline-flex items-center gap-2 ml-2 bg-purple-100 text-purple-700 hover:bg-purple-200"
+        >
+          <Table2 className="h-4 w-4" />
+          {bulkEditMode ? 'Exit Bulk Edit' : 'Bulk Edit All Fields'}
+        </button>
 
-        <div className="mt-6 space-y-2">
+        {bulkEditMode ? (
+          <div className="mt-6">
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-purple-800">
+                <strong>Bulk Edit Mode:</strong> Edit all location fields at once. Click "Save All Changes" when done.
+              </p>
+            </div>
+            <div className="overflow-x-auto max-h-96 overflow-y-auto border rounded-lg">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-100 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-semibold">Code (Value)</th>
+                    <th className="px-3 py-2 text-left font-semibold">Long Name (Label)</th>
+                    <th className="px-3 py-2 text-left font-semibold">Type</th>
+                    <th className="px-3 py-2 text-left font-semibold">Short Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {locations.map((loc) => (
+                    <tr key={loc.id} className="border-t hover:bg-gray-50">
+                      <td className="px-3 py-2">
+                        <input
+                          type="text"
+                          className="w-full px-2 py-1 text-sm border rounded"
+                          value={bulkEdits[loc.id]?.value || ''}
+                          onChange={(e) => setBulkEdits({
+                            ...bulkEdits,
+                            [loc.id]: { ...bulkEdits[loc.id], value: e.target.value }
+                          })}
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <input
+                          type="text"
+                          className="w-full px-2 py-1 text-sm border rounded"
+                          value={bulkEdits[loc.id]?.label || ''}
+                          onChange={(e) => setBulkEdits({
+                            ...bulkEdits,
+                            [loc.id]: { ...bulkEdits[loc.id], label: e.target.value }
+                          })}
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <select
+                          className="w-full px-2 py-1 text-sm border rounded"
+                          value={bulkEdits[loc.id]?.type || 'other'}
+                          onChange={(e) => setBulkEdits({
+                            ...bulkEdits,
+                            [loc.id]: { ...bulkEdits[loc.id], type: e.target.value }
+                          })}
+                        >
+                          <option value="shop">Shop</option>
+                          <option value="warehouse">Warehouse</option>
+                          <option value="godown">Godown</option>
+                          <option value="office">Office</option>
+                          <option value="accommodation">Accommodation</option>
+                          <option value="rented">Rented Property</option>
+                          <option value="galolhu">Galolhu</option>
+                          <option value="doores">Doores</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </td>
+                      <td className="px-3 py-2">
+                        <input
+                          type="text"
+                          className="w-full px-2 py-1 text-sm border rounded"
+                          placeholder="e.g., AM"
+                          value={bulkEdits[loc.id]?.shortName || ''}
+                          onChange={(e) => setBulkEdits({
+                            ...bulkEdits,
+                            [loc.id]: { ...bulkEdits[loc.id], shortName: e.target.value }
+                          })}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={saveBulkEdits}
+                disabled={savingBulk}
+                className="btn btn-primary inline-flex items-center gap-2 disabled:opacity-50"
+              >
+                <Save className="h-4 w-4" />
+                {savingBulk ? 'Saving...' : 'Save All Changes'}
+              </button>
+              <button
+                onClick={() => { setBulkEditMode(false); setBulkEdits({}); }}
+                className="btn btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-6 space-y-2">
           {locations.map((loc) => (
             <div key={loc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
               <div className="flex-1">
