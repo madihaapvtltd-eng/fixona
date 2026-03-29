@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 export function AdminSettingsPage() {
   const [locations, setLocations] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
-  const [newLocation, setNewLocation] = useState({ value: '', label: '', type: 'shop' });
+  const [newLocation, setNewLocation] = useState({ value: '', label: '', type: 'shop', shortName: '' });
   const [newDepartment, setNewDepartment] = useState({ value: '', label: '', icon: '' });
   const [loading, setLoading] = useState(false);
 
@@ -26,7 +26,7 @@ export function AdminSettingsPage() {
   const addLocation = async () => {
     if (!newLocation.value || !newLocation.label) return;
     await addDoc(collection(db, 'settings', 'locations', 'items'), newLocation);
-    setNewLocation({ value: '', label: '', type: 'shop' });
+    setNewLocation({ value: '', label: '', type: 'shop', shortName: '' });
     loadSettings();
     toast.success('Location added');
   };
@@ -70,7 +70,7 @@ export function AdminSettingsPage() {
           <h2 className="text-xl font-bold">Locations</h2>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-4 gap-4 mb-6">
           <input
             type="text"
             placeholder="Location code (e.g., SHOP01)"
@@ -84,6 +84,13 @@ export function AdminSettingsPage() {
             className="input"
             value={newLocation.label}
             onChange={(e) => setNewLocation({ ...newLocation, label: e.target.value })}
+          />
+          <input
+            type="text"
+            placeholder="Short name (e.g., AM for barcode)"
+            className="input"
+            value={newLocation.shortName}
+            onChange={(e) => setNewLocation({ ...newLocation, shortName: e.target.value })}
           />
           <select
             className="input"
@@ -115,6 +122,7 @@ export function AdminSettingsPage() {
               <div>
                 <span className="font-semibold">{loc.label}</span>
                 <span className="text-sm text-gray-500 ml-2">({loc.value})</span>
+                {loc.shortName && <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded ml-2">Short: {loc.shortName}</span>}
                 <span className={`text-xs px-2 py-1 rounded-full ml-2 ${
                   loc.type === 'shop' ? 'bg-blue-100 text-blue-800' :
                   loc.type === 'warehouse' ? 'bg-green-100 text-green-800' :

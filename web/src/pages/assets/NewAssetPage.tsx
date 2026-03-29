@@ -8,7 +8,6 @@ import { db } from '@/lib/firebase';
 import { useAuthStore } from '@/stores/authStore';
 import { ALL_LOCATIONS } from '@/lib/locations';
 import { DEPARTMENTS } from '@/lib/departments';
-import { generateAssetCode } from '@/lib/assetCode';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Building2, MapPin, Tag, FileText, Printer, QrCode } from 'lucide-react';
 import JsBarcode from 'jsbarcode';
@@ -59,12 +58,12 @@ export function NewAssetPage() {
     loadLocations();
   }, []);
 
-  // Auto-generate asset code when department changes
+  // Auto-generate asset code when department and location are selected
   useEffect(() => {
-    if (formData.department && !formData.assetCode) {
+    if (formData.department && formData.location && !formData.assetCode) {
       generateNewAssetCode();
     }
-  }, [formData.department]);
+  }, [formData.department, formData.location]);
 
   // Generate barcode when asset code changes
   useEffect(() => {
@@ -90,10 +89,37 @@ export function NewAssetPage() {
       toast.error('Please select a department first');
       return;
     }
+    if (!formData.location) {
+      toast.error('Please select a location first');
+      return;
+    }
 
     setGeneratingCode(true);
     try {
-      const code = await generateAssetCode(formData.department);
+      // Get year from purchase date or current year
+      const year = formData.purchaseDate 
+        ? new Date(formData.purchaseDate).getFullYear().toString().slice(-2) // Last 2 digits
+        : new Date().getFullYear().toString().slice(-2);
+      
+      // Get location short name
+      const selectedLocation = dynamicLocations.find((loc: any) => loc.value === formData.location);
+      const locationShortName = selectedLocation?.shortName || selectedLocation?.value?.slice(0, 2) || 'XX';
+      
+      // Get department code (uppercase, first 2 chars)
+      const deptCode = formData.department.toUpperCase().slice(0, 2);
+      
+      // Generate sequential number (get count of existing assets with same pattern)
+      const assetsSnap = await getDocs(collection(db, 'assets'));
+      const prefix = `MD${deptCode}${year}${locationShortName}`;
+      const existingCodes = assetsSnap.docs
+        .map(d => d.data().assetCode)
+        .filter(code => code?.startsWith(prefix));
+      const seqNum = (existingCodes.length + 1).toString().padStart(3, '0');
+      
+      // Format: MD + Dept + Year + LocationShort + Sequential
+      // Example: MDIT25AM001
+      const code = `${prefix}${seqNum}`;
+      
       setFormData((prev) => ({ ...prev, assetCode: code, barcode: code }));
       toast.success(`Asset code generated: ${code}`);
     } catch (error) {
@@ -238,13 +264,13 @@ export function NewAssetPage() {
                     <button
                       type="button"
                       onClick={generateNewAssetCode}
-                      disabled={!formData.department || generatingCode}
+                      disabled={!formData.department || !formData.location || generatingCode}
                       className="btn btn-secondary whitespace-nowrap"
                     >
                       {generatingCode ? 'Generating...' : 'Generate'}
                     </button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Format: MAD + Dept Code + Sequential Number</p>
+                  <p className="text-xs text-gray-500 mt-1">Format: MD + Dept + Year + Location + Seq (e.g., MDIT25AM001)</p>
                 </div>
 
             <div>
@@ -506,8 +532,8 @@ export function NewAssetPage() {
                 )}
                 
                 <p className="font-medium mt-2">Format:</p>
-                <p className="text-gray-600">MAD + Dept Code + 4-digit Number</p>
-                <p className="mt-1 text-gray-400">Example: MADIT0012</p>
+                <p className="text-gray-600">MD + Dept + Year + Location + Seq</p>
+                <p className="mt-1 text-gray-400">Example: MDIT25AM001</p>
               </div>
             </div>
           </div>
@@ -515,9 +541,9 @@ export function NewAssetPage() {
           <div className="text-center text-gray-500 py-8">
             <QrCode className="h-16 w-16 mx-auto mb-4 opacity-30" />
             <p className="font-medium mb-2">No Asset Code Generated</p>
-            <p className="text-sm">Select a department in the form to generate an asset code and barcode</p>
+            <p className="text-sm">Select department and location to generate asset code</p>
             <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
-              <p>👆 Go to the Department field in the form</p>
+              <p>👆 Select Department and Location first</p>
             </div>
           </div>
         )}
