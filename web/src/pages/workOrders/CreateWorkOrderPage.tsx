@@ -11,6 +11,8 @@ import { useAuthStore } from '@/stores/authStore';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Plus, Palette, Wrench, Monitor, Megaphone, ShoppingCart, Users, Calculator, Clipboard, Package } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { TemplateSelector } from '@/components/workOrders/TemplateSelector';
+import { WorkOrderTemplate } from '@/lib/workOrderTemplates';
 
 const WORK_TYPE_ICONS: Record<string, any> = {
   maintenance: Wrench,
@@ -157,6 +159,30 @@ export function CreateWorkOrderPage() {
             );
           })}
         </div>
+      </div>
+
+      {/* Template Selection */}
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <label className="label font-semibold mb-4">Use Template (Optional)</label>
+        <TemplateSelector
+          onSelect={(template: WorkOrderTemplate | null) => {
+            if (template) {
+              setFormData(prev => ({
+                ...prev,
+                title: template.name,
+                description: template.description,
+                priority: template.defaultPriority,
+              }));
+              toast.success(`Template applied: ${template.name}`);
+            } else {
+              setFormData(prev => ({
+                ...prev,
+                title: '',
+                description: '',
+              }));
+            }
+          }}
+        />
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg p-6 space-y-6">
