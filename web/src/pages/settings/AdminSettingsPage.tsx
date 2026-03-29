@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Settings, MapPin, Building2, Plus, Trash2, Save } from 'lucide-react';
+import { Settings, MapPin, Building2, Plus, Trash2, Save, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export function AdminSettingsPage() {
@@ -10,6 +10,8 @@ export function AdminSettingsPage() {
   const [newLocation, setNewLocation] = useState({ value: '', label: '', type: 'shop', shortName: '' });
   const [newDepartment, setNewDepartment] = useState({ value: '', label: '', icon: '' });
   const [loading, setLoading] = useState(false);
+  const [editingLocation, setEditingLocation] = useState<string | null>(null);
+  const [editShortName, setEditShortName] = useState('');
 
   useEffect(() => {
     loadSettings();
@@ -43,6 +45,17 @@ export function AdminSettingsPage() {
     await deleteDoc(doc(db, 'settings', 'locations', 'items', id));
     loadSettings();
     toast.success('Location deleted');
+  };
+
+  const updateLocation = async (id: string) => {
+    if (!editShortName.trim()) return;
+    await updateDoc(doc(db, 'settings', 'locations', 'items', id), {
+      shortName: editShortName.trim()
+    });
+    setEditingLocation(null);
+    setEditShortName('');
+    loadSettings();
+    toast.success('Short name updated');
   };
 
   const deleteDepartment = async (id: string) => {
@@ -119,23 +132,73 @@ export function AdminSettingsPage() {
         <div className="mt-6 space-y-2">
           {locations.map((loc) => (
             <div key={loc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-              <div>
-                <span className="font-semibold">{loc.label}</span>
-                <span className="text-sm text-gray-500 ml-2">({loc.value})</span>
-                {loc.shortName && <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded ml-2">Short: {loc.shortName}</span>}
-                <span className={`text-xs px-2 py-1 rounded-full ml-2 ${
-                  loc.type === 'shop' ? 'bg-blue-100 text-blue-800' :
-                  loc.type === 'warehouse' ? 'bg-green-100 text-green-800' :
-                  loc.type === 'godown' ? 'bg-orange-100 text-orange-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>{loc.type}</span>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">{loc.label}</span>
+                  <span className="text-sm text-gray-500">({loc.value})</span>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    loc.type === 'shop' ? 'bg-blue-100 text-blue-800' :
+                    loc.type === 'warehouse' ? 'bg-green-100 text-green-800' :
+                    loc.type === 'godown' ? 'bg-orange-100 text-orange-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>{loc.type}</span>
+                </div>
+                
+                {editingLocation === loc.id ? (
+                  <div className="flex items-center gap-2 mt-2">
+                    <input
+                      type="text"
+                      placeholder="Add short name (e.g., AM)"
+                      className="input text-sm py-1 px-2"
+                      value={editShortName}
+                      onChange={(e) => setEditShortName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && updateLocation(loc.id)}
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => updateLocation(loc.id)}
+                      className="p-1 text-green-600 hover:bg-green-50 rounded"
+                      title="Save"
+                    >
+                      <Save className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => { setEditingLocation(null); setEditShortName(''); }}
+                      className="text-xs text-gray-500 px-2"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 mt-1">
+                    {loc.shortName ? (
+                      <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded">
+                        Short: {loc.shortName}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-orange-500">No short name (needed for barcode)</span>
+                    )}
+                  </div>
+                )}
               </div>
-              <button
-                onClick={() => deleteLocation(loc.id)}
-                className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                {editingLocation !== loc.id && (
+                  <button
+                    onClick={() => { setEditingLocation(loc.id); setEditShortName(loc.shortName || ''); }}
+                    className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"
+                    title="Edit short name"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                )}
+                <button
+                  onClick={() => deleteLocation(loc.id)}
+                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                  title="Delete"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
