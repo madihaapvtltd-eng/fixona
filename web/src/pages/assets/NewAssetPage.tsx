@@ -3,7 +3,7 @@ import { useQueryClient } from 'react-query';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { uploadMultipleImages } from '@/lib/cloudinary';
 import { Link, useNavigate } from 'react-router-dom';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuthStore } from '@/stores/authStore';
 import { ALL_LOCATIONS } from '@/lib/locations';
@@ -20,6 +20,8 @@ export function NewAssetPage() {
   const [generatingCode, setGeneratingCode] = useState(false);
   const [showBarcode, setShowBarcode] = useState(false);
   const queryClient = useQueryClient();
+  const [dynamicLocations, setDynamicLocations] = useState<any[]>([]);
+  const barcodeRef = useRef<SVGSVGElement>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -40,6 +42,19 @@ export function NewAssetPage() {
     nextMaintenance: '',
     images: [] as string[],
   });
+
+  // Load dynamic locations from Firebase
+  useEffect(() => {
+    const loadLocations = async () => {
+      try {
+        const locSnap = await getDocs(collection(db, 'settings', 'locations', 'items'));
+        setDynamicLocations(locSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (error) {
+        console.error('Failed to load locations:', error);
+      }
+    };
+    loadLocations();
+  }, []);
 
   // Auto-generate asset code when department changes
   useEffect(() => {
@@ -256,16 +271,33 @@ export function NewAssetPage() {
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               >
                 <option value="">Select Location</option>
+                
+                {/* Dynamic locations from Firebase (admin added) */}
+                {dynamicLocations.length > 0 && (
+                  <optgroup label="Custom Locations (Admin Added)">
+                    {dynamicLocations.map((loc: any) => (
+                      <option key={loc.id} value={loc.value}>
+                        {loc.type ? `${loc.type.charAt(0).toUpperCase()}${loc.type.slice(1)} - ${loc.label}` : loc.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                
+                {/* Static UFANVELI Shops */}
                 <optgroup label="UFANVELI Shops">
                   {ALL_LOCATIONS.filter(l => l.value.startsWith('UF') || l.value === 'UBS').map(loc => (
                     <option key={loc.value} value={loc.value}>{loc.label}</option>
                   ))}
                 </optgroup>
+                
+                {/* Static HULHUMALE GODOWN */}
                 <optgroup label="HULHUMALE GODOWN (HMCGD)">
                   {ALL_LOCATIONS.filter(l => l.value.startsWith('HMCGD')).map(loc => (
                     <option key={loc.value} value={loc.value}>{loc.label}</option>
                   ))}
                 </optgroup>
+                
+                {/* Static MALE CENTRAL GODOWN */}
                 <optgroup label="MALE CENTRAL GODOWN (MCG)">
                   {ALL_LOCATIONS.filter(l => l.value.startsWith('MCG')).map(loc => (
                     <option key={loc.value} value={loc.value}>{loc.label}</option>
