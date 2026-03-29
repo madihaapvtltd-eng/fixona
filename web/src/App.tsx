@@ -31,6 +31,7 @@ import { ReportsPage } from '@/pages/reports/ReportsPage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { AdminSettingsPage } from '@/pages/settings/AdminSettingsPage';
 import { BootstrapAdminPage } from '@/pages/admin/BootstrapAdminPage';
+import { AdminToolsPage } from '@/pages/admin/AdminToolsPage';
 import { TechnicianMobilePage } from '@/pages/technician/TechnicianMobilePage';
 import { AIDashboardPage } from '@/pages/ai/AIDashboardPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -111,6 +112,7 @@ function App() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/admin/settings" element={<AdminSettingsPage />} />
         <Route path="/setup-admin" element={<BootstrapAdminPage />} />
+        <Route path="/admin/tools" element={<AdminToolsPage />} />
         <Route path="/technician" element={<TechnicianMobilePage />} />
         <Route path="/ai-dashboard" element={<AIDashboardPage />} />
       </Route>
