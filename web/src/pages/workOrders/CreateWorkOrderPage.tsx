@@ -6,6 +6,7 @@ import { ALL_LOCATIONS } from '@/lib/locations';
 import { DEPARTMENTS } from '@/lib/departments';
 import { WORK_TYPES, getWorkTypeLabel } from '@/lib/workTypes';
 import { ImageUpload } from '@/components/ui/ImageUpload';
+import { useAuthStore } from '@/stores/authStore';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Plus, Palette, Wrench, Monitor, Megaphone, ShoppingCart, Users, Calculator, Clipboard, Package } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -23,6 +24,7 @@ const WORK_TYPE_ICONS: Record<string, any> = {
 
 export function CreateWorkOrderPage() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [workType, setWorkType] = useState('maintenance');
   const [dynamicLocations, setDynamicLocations] = useState<any[]>([]);
@@ -88,7 +90,7 @@ export function CreateWorkOrderPage() {
         attachments: [],
         partsUsed: [],
         purchaseItems: [],
-        createdBy: 'user',
+        createdBy: user?.id || 'unknown',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         dueDate: formData.dueDate ? new Date(formData.dueDate) : null,
@@ -103,7 +105,8 @@ export function CreateWorkOrderPage() {
   };
 
   const workTypeConfig = WORK_TYPES[workType as keyof typeof WORK_TYPES];
-  const allLocations = dynamicLocations.length > 0 ? dynamicLocations : ALL_LOCATIONS;
+  // Combine dynamic locations from Firebase with static ones
+  const allLocations = [...dynamicLocations, ...ALL_LOCATIONS];
   const allDepartments = dynamicDepartments.length > 0 ? dynamicDepartments : DEPARTMENTS;
 
   const getLocationOptionLabel = (loc: any) => {

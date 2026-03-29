@@ -50,11 +50,12 @@ export function WorkOrdersPage() {
       console.log('WorkOrders: Loaded', snap.docs.length, 'work orders');
       const allWorkOrders = snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => ({ id: d.id, ...d.data() }));
       
-      // For non-admin users, filter to only show assigned work orders
+      // For non-admin users, filter to only show assigned work orders or ones they created
       if (!canViewAllWorkOrders && userRole !== 'super_admin' && userRole !== 'dept_admin') {
         return allWorkOrders.filter((wo: any) => 
           wo.technicianId === user?.id || 
-          wo.supervisorId === user?.id
+          wo.supervisorId === user?.id ||
+          wo.createdBy === user?.id
         );
       }
       
