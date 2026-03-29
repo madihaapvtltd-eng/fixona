@@ -91,7 +91,7 @@ export function WorkOrdersPage() {
   }, [refetch]);
 
   // Split work orders into active and completed
-  const activeStatuses = ['raised', 'assigned_to_supervisor', 'assigned_to_technician', 'in_progress', 'need_to_buy', 'fixed'];
+  const activeStatuses = ['open', 'raised', 'assigned_to_supervisor', 'assigned_to_technician', 'in_progress', 'need_to_buy', 'fixed'];
   const completedStatuses = ['completed'];
   
   const activeWorkOrders = workOrders?.filter((wo: any) => 
