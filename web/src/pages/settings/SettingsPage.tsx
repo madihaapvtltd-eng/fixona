@@ -2,7 +2,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Users, Shield, Bell, Info, Building2 } from 'lucide-react';
+import { Users, Shield, Bell, Info, Building2, Calculator } from 'lucide-react';
 
 export function SettingsPage() {
   const { user } = useAuthStore();
@@ -89,6 +89,24 @@ export function SettingsPage() {
               </div>
               <span className="text-primary-600">→</span>
             </Link>
+
+            {user?.role === 'super_admin' && (
+              <Link 
+                to="/admin/tools" 
+                className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 border border-gray-200 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Calculator className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Admin Tools</p>
+                    <p className="text-sm text-gray-500">Recalculate work order costs</p>
+                  </div>
+                </div>
+                <span className="text-primary-600">→</span>
+              </Link>
+            )}
           </div>
         </div>
       )}
