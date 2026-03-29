@@ -16,11 +16,11 @@ import { useAuthStore } from '@/stores/authStore';
 import { notifyWorkOrderAssigned, notifyPurchaseRequest } from '@/lib/notificationHelpers';
 import toast from 'react-hot-toast';
 
-// Fetch staff users
+// Fetch all users for assignment
 async function fetchStaffUsers() {
   const usersRef = collection(db, 'users');
-  const q = query(usersRef, where('role', 'in', ['supervisor', 'technician', 'admin']));
-  const snapshot = await getDocs(q);
+  // Fetch ALL users - any role can be assigned work orders
+  const snapshot = await getDocs(usersRef);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
@@ -67,7 +67,7 @@ export function WorkOrderDetailPage() {
   const [purchaseItems, setPurchaseItems] = useState([{ name: '', quantity: 1, estimatedCost: 0 }]);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState('');
-  const [assignRole, setAssignRole] = useState<'supervisor' | 'technician'>('supervisor');
+  const [assignRole, setAssignRole] = useState<string>('any');
   const [assignComment, setAssignComment] = useState('');
   const [staffUsers, setStaffUsers] = useState<any[]>([]);
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -128,13 +128,20 @@ export function WorkOrderDetailPage() {
     if (!selectedStaff) { toast.error('Please select a staff member'); return; }
     if (!assignComment.trim()) { toast.error('Please add a comment for this assignment'); return; }
     const staff = staffUsers.find(s => s.id === selectedStaff);
-    const newStatus = assignRole === 'supervisor' ? 'assigned_to_supervisor' : 'assigned_to_technician';
+    const staffRole = staff?.role || 'user';
+    const newStatus = `assigned_to_${staffRole}`;
     
     await updateStatus(newStatus, {
-      [`${assignRole}Id`]: selectedStaff,
-      [`${assignRole}Name`]: staff?.name || staff?.email,
-      [`${assignRole}AssignedAt`]: new Date().toISOString(),
-      [`${assignRole}Comment`]: assignComment,
+      assignedToId: selectedStaff,
+      assignedToName: staff?.name || staff?.email,
+      assignedToRole: staffRole,
+      assignedAt: new Date().toISOString(),
+      assignComment: assignComment,
+      // Keep backwards compatibility
+      [`${staffRole}Id`]: selectedStaff,
+      [`${staffRole}Name`]: staff?.name || staff?.email,
+      [`${staffRole}AssignedAt`]: new Date().toISOString(),
+      [`${staffRole}Comment`]: assignComment,
     });
     
     // Create notification for assigned user
@@ -145,7 +152,7 @@ export function WorkOrderDetailPage() {
       staff?.name || staff?.email || 'Unknown',
       currentUser?.name || 'Someone',
       selectedStaff,
-      assignRole
+      staffRole
     );
     
     setShowAssignModal(false);
@@ -775,8 +782,27 @@ export function WorkOrderDetailPage() {
               Assignment
             </h2>
             
-            {/* Supervisor Assignment */}
-            {workOrder.supervisorName && (
+            {/* Generic Assigned User Display */}
+            {workOrder.assignedToName && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-gray-500">Assigned To</p>
+                <p className="font-medium text-blue-900">{workOrder.assignedToName}</p>
+                <p className="text-xs text-blue-600 capitalize">({workOrder.assignedToRole || 'User'})</p>
+                {workOrder.assignedAt && (
+                  <p className="text-xs text-blue-600">
+                    Assigned: {format(new Date(workOrder.assignedAt), 'MMM d, yyyy HH:mm')}
+                  </p>
+                )}
+                {workOrder.assignComment && (
+                  <p className="text-sm text-gray-600 mt-1 italic">
+                    "{workOrder.assignComment}"
+                  </p>
+                )}
+              </div>
+            )}
+            
+            {/* Backwards compatibility - Supervisor Assignment */}
+            {workOrder.supervisorName && !workOrder.assignedToName && (
               <div className="mb-4 p-3 bg-blue-50 rounded-lg">
                 <p className="text-sm text-gray-500">Supervisor</p>
                 <p className="font-medium text-blue-900">{workOrder.supervisorName}</p>
@@ -793,8 +819,8 @@ export function WorkOrderDetailPage() {
               </div>
             )}
             
-            {/* Technician Assignment */}
-            {workOrder.technicianName && (
+            {/* Backwards compatibility - Technician Assignment */}
+            {workOrder.technicianName && !workOrder.assignedToName && (
               <div className="mb-4 p-3 bg-indigo-50 rounded-lg">
                 <p className="text-sm text-gray-500">Technician</p>
                 <p className="font-medium text-indigo-900">{workOrder.technicianName}</p>
@@ -811,30 +837,20 @@ export function WorkOrderDetailPage() {
               </div>
             )}
             
-            {!workOrder.supervisorName && !workOrder.technicianName && (
+            {!workOrder.assignedToName && !workOrder.supervisorName && !workOrder.technicianName && (
               <p className="text-sm text-gray-500 mb-4">Unassigned</p>
             )}
 
             <div className="mt-4 grid grid-cols-1 gap-2">
               <button
                 onClick={() => {
-                  setAssignRole('supervisor');
+                  setAssignRole('any');
                   setShowAssignModal(true);
                 }}
                 disabled={updating}
                 className="w-full py-2 bg-blue-500 text-white rounded-lg font-medium disabled:opacity-50"
               >
-                Assign Supervisor
-              </button>
-              <button
-                onClick={() => {
-                  setAssignRole('technician');
-                  setShowAssignModal(true);
-                }}
-                disabled={updating}
-                className="w-full py-2 bg-indigo-500 text-white rounded-lg font-medium disabled:opacity-50"
-              >
-                Assign Technician
+                Assign to User
               </button>
             </div>
           </div>
@@ -922,7 +938,7 @@ export function WorkOrderDetailPage() {
       {showAssignModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">Assign {assignRole === 'supervisor' ? 'Supervisor' : 'Technician'}</h2>
+            <h2 className="text-xl font-bold mb-4">Assign Work Order</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Select Staff</label>
@@ -932,15 +948,11 @@ export function WorkOrderDetailPage() {
                   onChange={(e) => setSelectedStaff(e.target.value)}
                 >
                   <option value="">Choose...</option>
-                  {staffUsers
-                    .filter((user: any) => assignRole === 'supervisor' 
-                      ? user.role === 'supervisor' || user.role === 'admin'
-                      : user.role === 'technician' || user.role === 'admin')
-                    .map((user: any) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name || user.email}
-                      </option>
-                    ))}
+                  {staffUsers.map((user: any) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name || user.email} ({user.role})
+                    </option>
+                  ))}
                 </select>
                 {staffUsers.length === 0 && (
                   <p className="text-sm text-orange-600 mt-2">No staff found. Add users first.</p>
