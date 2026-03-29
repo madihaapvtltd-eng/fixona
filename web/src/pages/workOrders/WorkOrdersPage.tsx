@@ -162,11 +162,11 @@ export function WorkOrdersPage() {
       {/* Work Orders List */}
       <div className="space-y-4">
         {isLoading ? (
-          <div className="card p-8 text-center">Loading...</div>
+          <div className="card p-8 text-center">Loading work orders...</div>
         ) : error ? (
           <div className="card p-8 text-center text-red-600">
             <p>Error loading work orders.</p>
-            <p className="text-sm text-gray-500 mt-2">Check console for details</p>
+            <p className="text-sm text-gray-500 mt-2">{error instanceof Error ? error.message : 'Unknown error'}</p>
             <button 
               onClick={() => refetch()} 
               className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -174,7 +174,7 @@ export function WorkOrdersPage() {
               Retry
             </button>
           </div>
-        ) : filteredWO?.length === 0 ? (
+        ) : workOrders?.length === 0 ? (
           <div className="card p-8 text-center">
             <img 
               src="/storyset-illustrations/Under construction-amico.svg" 
@@ -187,9 +187,12 @@ export function WorkOrdersPage() {
                 : 'No work orders found'}
             </p>
             <p className="text-sm text-gray-400 mt-2">Create a new work order to get started</p>
+            <p className="text-xs text-gray-400 mt-1">Role: {userRole}, User ID: {user?.id?.slice(0,8)}...</p>
           </div>
         ) : (
-          filteredWO?.map((wo: DocumentData) => (
+          <>
+            <p className="text-sm text-gray-500">Showing {filteredWO?.length} of {workOrders?.length} work orders</p>
+            {filteredWO?.map((wo: DocumentData) => (
             <Link
               key={wo.id}
               to={`/work-orders/${wo.id}`}
@@ -211,7 +214,8 @@ export function WorkOrdersPage() {
               </div>
               <ArrowRight className="h-5 w-5 text-gray-400" />
             </Link>
-          ))
+          ))}
+          </>
         )}
       </div>
     </div>

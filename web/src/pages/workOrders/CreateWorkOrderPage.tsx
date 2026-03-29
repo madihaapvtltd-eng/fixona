@@ -205,7 +205,7 @@ export function CreateWorkOrderPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="label">Location *</label>
+            <label className="label">Location * ({allLocations.length} available)</label>
             <select
               required
               className="input"
@@ -213,12 +213,20 @@ export function CreateWorkOrderPage() {
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
             >
               <option value="">Select Location</option>
-              {allLocations.map((loc: any) => (
-                <option key={loc.value || loc.id} value={loc.value || loc.id}>
+              {allLocations.length === 0 && (
+                <option value="" disabled>No locations loaded - check console</option>
+              )}
+              {allLocations.map((loc: any, index: number) => (
+                <option key={`${loc.value || loc.id || index}`} value={loc.value || loc.id}>
                   {getLocationOptionLabel(loc)}
                 </option>
               ))}
             </select>
+            {dynamicLocations.length === 0 && (
+              <p className="text-xs text-orange-500 mt-1">
+                No dynamic locations loaded from Firebase
+              </p>
+            )}
           </div>
 
           <div>
