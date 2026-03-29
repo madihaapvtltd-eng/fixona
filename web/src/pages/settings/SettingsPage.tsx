@@ -2,8 +2,9 @@ import { useAuthStore } from '@/stores/authStore';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Users, Shield, Bell, Info, Building2, Calculator, Volume2, VolumeX } from 'lucide-react';
+import { Users, Shield, Bell, Info, Building2, Calculator, Volume2, VolumeX, BellRing } from 'lucide-react';
 import { useNotificationSound } from '@/lib/notificationSound';
+import { usePushNotifications } from '@/lib/pushNotifications';
 
 export function SettingsPage() {
   const { user } = useAuthStore();
@@ -13,6 +14,8 @@ export function SettingsPage() {
     whatsapp: false,
   });
   const { isEnabled, toggle, enable } = useNotificationSound();
+  const { isSupported, permission, init } = usePushNotifications();
+  const [pushEnabled, setPushEnabled] = useState(permission === 'granted');
 
   const handleSave = () => {
     toast.success('Settings saved successfully');
@@ -212,6 +215,47 @@ export function SettingsPage() {
               )}
             </button>
           </div>
+
+          {/* Push Notifications Toggle */}
+          {isSupported && (
+            <div className="flex items-center justify-between pt-2 border-t">
+              <div>
+                <p className="font-medium">Background Notifications</p>
+                <p className="text-sm text-gray-500">Show notifications even when app is closed</p>
+              </div>
+              <button
+                onClick={async () => {
+                  if (permission === 'granted') {
+                    toast.success('Push notifications already enabled');
+                  } else if (permission === 'denied') {
+                    toast.error('Please enable notifications in browser settings');
+                  } else {
+                    const success = await init();
+                    if (success) {
+                      setPushEnabled(true);
+                      toast.success('Push notifications enabled');
+                    } else {
+                      toast.error('Failed to enable push notifications');
+                    }
+                  }
+                }}
+                disabled={permission === 'denied'}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  permission === 'granted'
+                    ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                    : permission === 'denied'
+                    ? 'bg-red-100 text-red-700 cursor-not-allowed'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <BellRing className="h-5 w-5" />
+                <span>
+                  {permission === 'granted' ? 'Enabled' : 
+                   permission === 'denied' ? 'Blocked' : 'Enable'}
+                </span>
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="mt-6 pt-6 border-t">
