@@ -225,7 +225,12 @@ export function WorkOrderDetailPage() {
         <div className="flex gap-2">
           {workOrder.status !== 'completed' && workOrder.status !== 'cancelled' && (
             <>
-              {(workOrder.status === 'open' || workOrder.status === 'assigned_to_technician') && (
+              {/* Start Work - Available for any assigned or open status */}
+              {(workOrder.status === 'open' || 
+                workOrder.status === 'raised' ||
+                workOrder.status?.startsWith('assigned_to_') ||
+                workOrder.status === 'fixed' ||
+                workOrder.status === 'rejected') && (
                 <button
                   onClick={() => {
                     setPendingStatus('in_progress');
@@ -238,7 +243,10 @@ export function WorkOrderDetailPage() {
                   Start Work
                 </button>
               )}
-              {workOrder.status === 'in_progress' && (
+              {/* Complete - Available when in progress or fixed */}
+              {(workOrder.status === 'in_progress' || 
+                workOrder.status === 'fixed' ||
+                workOrder.status === 'work_started_with_items') && (
                 <button
                   onClick={() => {
                     setPendingStatus('completed');
