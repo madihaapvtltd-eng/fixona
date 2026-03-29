@@ -188,11 +188,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="relative" ref={notificationRef}>
               <button 
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="p-3 text-gray-600 hover:text-gray-900 relative"
+                className="p-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 relative mr-2"
+                aria-label="Notifications"
               >
                 <Bell className="h-6 w-6" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                  <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
@@ -266,8 +267,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* Mobile: Logout Button */}
             <button
               onClick={handleLogout}
-              className="p-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg mx-2"
-              title="Logout"
+              className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200"
+              aria-label="Logout"
             >
               <LogOut className="h-6 w-6" />
             </button>
