@@ -118,6 +118,28 @@ export function WorkOrderDetailPage() {
       updateData[`stageDurations.${prevStage}`] = duration;
     }
 
+    // Calculate costs when completing work order
+    if (newStatus === 'completed') {
+      // Calculate parts cost from partsUsed
+      const partsCost = (workOrder?.partsUsed || []).reduce((sum: number, part: any) => 
+        sum + (part.totalCost || 0), 0);
+      
+      // Calculate purchase cost from purchaseItems
+      const purchaseCost = (workOrder?.purchaseItems || []).reduce((sum: number, item: any) => 
+        sum + ((item.estimatedCost || 0) * (item.quantity || 0)), 0);
+      
+      // Use existing laborCost or default to 0
+      const laborCost = workOrder?.laborCost || 0;
+      
+      // Calculate total cost
+      const totalCost = partsCost + purchaseCost + laborCost;
+      
+      updateData.partsCost = partsCost;
+      updateData.purchaseCost = purchaseCost;
+      updateData.cost = totalCost;
+      updateData.finalCost = totalCost; // For completed work orders display
+    }
+
     await updateDoc(doc(db, 'work_orders', id), updateData);
     await refetch();
     setUpdating(false);
