@@ -50,12 +50,20 @@ function App() {
         const userData = userDoc.data();
         
         // Set user even if Firestore doc doesn't exist yet
+        // IMPORTANT: name should be person's name, not department
+        const userName = userData?.name || firebaseUser.displayName || '';
+        // Filter out department name if it's mistakenly stored as 'name'
+        const cleanName = userName && (userName.toLowerCase() === userData?.department?.toLowerCase() || 
+                                       userName.toLowerCase() === userData?.role?.toLowerCase()) 
+                          ? firebaseUser.displayName || userData?.email?.split('@')[0] || '' 
+                          : userName;
+        
         setUser({
           id: firebaseUser.uid,
           email: firebaseUser.email!,
-          name: userData?.name || firebaseUser.displayName || '',
           role: userData?.role || 'staff',
           ...userData,
+          name: cleanName, // Ensure name is always the person's name, not department
         });
       } else {
         setUser(null);
