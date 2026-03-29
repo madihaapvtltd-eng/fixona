@@ -183,7 +183,8 @@ export function NewAssetPage() {
         barcodeSvg: barcodeDataUrl,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        createdBy: user?.uid,
+        createdBy: user?.id || 'unknown',
+        createdByName: user?.name || user?.email || 'Unknown User',
       });
       
       // Invalidate assets cache to refresh list
