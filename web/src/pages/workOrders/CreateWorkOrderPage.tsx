@@ -42,13 +42,22 @@ export function CreateWorkOrderPage() {
 
   useEffect(() => {
     const loadSettings = async () => {
-      const locSnap = await getDocs(collection(db, 'settings', 'locations', 'items'));
-      setDynamicLocations(locSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      const deptSnap = await getDocs(collection(db, 'settings', 'departments', 'items'));
-      setDynamicDepartments(deptSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      // Load assets for optional selection
-      const assetsSnap = await getDocs(collection(db, 'assets'));
-      setAssets(assetsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      try {
+        const locSnap = await getDocs(collection(db, 'settings', 'locations', 'items'));
+        const loadedLocations = locSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        console.log('WorkOrder: Loaded locations:', loadedLocations.length, loadedLocations);
+        setDynamicLocations(loadedLocations);
+        
+        const deptSnap = await getDocs(collection(db, 'settings', 'departments', 'items'));
+        setDynamicDepartments(deptSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        
+        // Load assets for optional selection
+        const assetsSnap = await getDocs(collection(db, 'assets'));
+        setAssets(assetsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+        toast.error('Failed to load locations/departments');
+      }
     };
     loadSettings();
   }, []);

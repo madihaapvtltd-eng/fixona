@@ -48,9 +48,12 @@ export function NewAssetPage() {
     const loadLocations = async () => {
       try {
         const locSnap = await getDocs(collection(db, 'settings', 'locations', 'items'));
-        setDynamicLocations(locSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const loadedLocations = locSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        console.log('Loaded dynamic locations:', loadedLocations.length, loadedLocations);
+        setDynamicLocations(loadedLocations);
       } catch (error) {
         console.error('Failed to load locations:', error);
+        toast.error('Failed to load locations');
       }
     };
     loadLocations();

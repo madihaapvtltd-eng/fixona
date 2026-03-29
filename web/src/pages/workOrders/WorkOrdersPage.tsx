@@ -7,6 +7,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useAuthStore } from '@/stores/authStore';
 import { Plus, Search, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 
 export function WorkOrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,40 +23,51 @@ export function WorkOrdersPage() {
     userDepartment 
   } = usePermissions();
 
-  const { data: workOrders, isLoading, refetch } = useQuery('workOrders', async () => {
-    let q;
-    
-    if (canViewAllWorkOrders || userRole === 'super_admin' || userRole === 'dept_admin') {
-      if (canViewAllWorkOrders) {
-        q = query(collection(db, 'work_orders'), orderBy('createdAt', 'desc'));
+  const { data: workOrders, isLoading, error, refetch } = useQuery('workOrders', async () => {
+    try {
+      let q;
+      
+      if (canViewAllWorkOrders || userRole === 'super_admin' || userRole === 'dept_admin') {
+        if (canViewAllWorkOrders) {
+          q = query(collection(db, 'work_orders'), orderBy('createdAt', 'desc'));
+        } else {
+          q = query(
+            collection(db, 'work_orders'), 
+            where('department', '==', userDepartment),
+            orderBy('createdAt', 'desc')
+          );
+        }
       } else {
+        // For technicians - get all work orders without department filter
+        // and filter client-side by assigned user
         q = query(
-          collection(db, 'work_orders'), 
-          where('department', '==', userDepartment),
+          collection(db, 'work_orders'),
           orderBy('createdAt', 'desc')
         );
       }
-    } else {
-      // For technicians - get all work orders without department filter
-      // and filter client-side by assigned user
-      q = query(
-        collection(db, 'work_orders'),
-        orderBy('createdAt', 'desc')
-      );
+      
+      const snap = await getDocs(q);
+      console.log('WorkOrders: Loaded', snap.docs.length, 'work orders');
+      const allWorkOrders = snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => ({ id: d.id, ...d.data() }));
+      
+      // For non-admin users, filter to only show assigned work orders
+      if (!canViewAllWorkOrders && userRole !== 'super_admin' && userRole !== 'dept_admin') {
+        return allWorkOrders.filter((wo: any) => 
+          wo.technicianId === user?.id || 
+          wo.supervisorId === user?.id
+        );
+      }
+      
+      return allWorkOrders;
+    } catch (err: any) {
+      console.error('Error loading work orders:', err);
+      if (err.message?.includes('index')) {
+        toast.error('Database index required. Please check Firebase console.');
+      } else {
+        toast.error('Failed to load work orders: ' + err.message);
+      }
+      throw err;
     }
-    
-    const snap = await getDocs(q);
-    const allWorkOrders = snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => ({ id: d.id, ...d.data() }));
-    
-    // For non-admin users, filter to only show assigned work orders
-    if (!canViewAllWorkOrders && userRole !== 'super_admin' && userRole !== 'dept_admin') {
-      return allWorkOrders.filter((wo: any) => 
-        wo.technicianId === user?.id || 
-        wo.supervisorId === user?.id
-      );
-    }
-    
-    return allWorkOrders;
   }, {
     refetchOnWindowFocus: true,
     staleTime: 0,
@@ -150,6 +162,17 @@ export function WorkOrdersPage() {
       <div className="space-y-4">
         {isLoading ? (
           <div className="card p-8 text-center">Loading...</div>
+        ) : error ? (
+          <div className="card p-8 text-center text-red-600">
+            <p>Error loading work orders.</p>
+            <p className="text-sm text-gray-500 mt-2">Check console for details</p>
+            <button 
+              onClick={() => refetch()} 
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Retry
+            </button>
+          </div>
         ) : filteredWO?.length === 0 ? (
           <div className="card p-8 text-center">
             <img 
