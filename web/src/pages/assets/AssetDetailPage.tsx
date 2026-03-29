@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useQuery } from 'react-query';
+import { useQuery, useQueryClient } from 'react-query';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy, deleteDoc, DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuthStore } from '@/stores/authStore';
@@ -19,6 +19,8 @@ export function AssetDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<any>(null);
+
+  const queryClient = useQueryClient();
 
   const { data: asset, refetch } = useQuery(['asset', id], async () => {
     if (!id) return null;
@@ -48,6 +50,8 @@ export function AssetDetailPage() {
     try {
       await deleteDoc(doc(db, 'assets', id));
       toast.success('Asset deleted successfully');
+      // Invalidate assets list cache
+      await queryClient.invalidateQueries(['assets']);
       navigate('/assets');
     } catch (error) {
       toast.error('Failed to delete asset');

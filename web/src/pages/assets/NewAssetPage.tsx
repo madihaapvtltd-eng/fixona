@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useQueryClient } from 'react-query';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { uploadMultipleImages } from '@/lib/cloudinary';
 import { Link, useNavigate } from 'react-router-dom';
@@ -18,7 +19,7 @@ export function NewAssetPage() {
   const [loading, setLoading] = useState(false);
   const [generatingCode, setGeneratingCode] = useState(false);
   const [showBarcode, setShowBarcode] = useState(false);
-  const barcodeRef = useRef<SVGSVGElement>(null);
+  const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -137,9 +138,13 @@ export function NewAssetPage() {
         ...formData,
         barcodeSvg: barcodeDataUrl,
         createdAt: new Date().toISOString(),
-        createdBy: user?.id,
         updatedAt: new Date().toISOString(),
+        createdBy: user?.uid,
       });
+      
+      // Invalidate assets cache to refresh list
+      await queryClient.invalidateQueries(['assets']);
+      
       toast.success(`Asset ${formData.assetCode} created successfully!`);
       navigate('/assets');
     } catch (error: any) {
