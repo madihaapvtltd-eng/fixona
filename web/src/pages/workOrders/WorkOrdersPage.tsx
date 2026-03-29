@@ -104,12 +104,13 @@ export function WorkOrdersPage() {
   ) || [];
   
   const completedWorkOrders = workOrders?.filter((wo: any) => {
-    if (!completedStatuses.includes(wo.status)) return false;
+    // Show if status is completed OR progress is 100%
+    if (wo.status === 'completed' || wo.progress === 100) return true;
     
     // Apply time frame filter
     if (completedTimeframe === 'all') return true;
     
-    const completedDate = wo.completedAt?.toDate?.() || wo.updatedAt?.toDate?.() || new Date();
+    const completedDate = wo.completedAt?.toDate?.() || wo.updatedAt?.toDate?.() || wo.progressUpdatedAt?.toDate?.() || new Date();
     const daysAgo = parseInt(completedTimeframe);
     const cutoffDate = subDays(new Date(), daysAgo);
     return isAfter(completedDate, cutoffDate);
