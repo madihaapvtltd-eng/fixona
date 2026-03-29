@@ -104,10 +104,11 @@ export function WorkOrdersPage() {
   ) || [];
   
   const completedWorkOrders = workOrders?.filter((wo: any) => {
-    // Show if status is completed OR progress is 100%
-    if (wo.status === 'completed' || wo.progress === 100) return true;
+    // Only show if status is completed OR progress is 100%
+    const isCompleted = wo.status === 'completed' || wo.progress === 100;
+    if (!isCompleted) return false;
     
-    // Apply time frame filter
+    // Apply time frame filter only to completed work orders
     if (completedTimeframe === 'all') return true;
     
     const completedDate = wo.completedAt?.toDate?.() || wo.updatedAt?.toDate?.() || wo.progressUpdatedAt?.toDate?.() || new Date();

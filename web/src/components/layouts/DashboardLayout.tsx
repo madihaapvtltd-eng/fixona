@@ -25,7 +25,8 @@ import {
   AlertCircle,
   User,
   CheckSquare,
-  Briefcase
+  Briefcase,
+  RefreshCw
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -183,8 +184,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </Link>
           </div>
           
-          {/* Mobile: Notification Bell */}
-          <div className="flex items-center">
+          {/* Mobile: Reload, Notification Bell, Logout */}
+          <div className="flex items-center gap-1">
+            {/* Mobile: Reload Button */}
+            <button
+              onClick={() => window.location.reload()}
+              className="p-2 bg-green-100 text-green-600 rounded-full hover:bg-green-200"
+              aria-label="Reload page"
+              title="Reload page"
+            >
+              <RefreshCw className="h-5 w-5" />
+            </button>
+            
+            {/* Mobile: Notification Bell */}
             <div className="relative" ref={notificationRef}>
               <button 
                 onClick={() => setShowNotifications(!showNotifications)}
@@ -281,6 +293,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {navigation.find(n => n.href === location.pathname)?.name || 'Dashboard'}
           </h1>
           <div className="flex items-center gap-4">
+            {/* Desktop: Reload, Notifications, User */}
+            <button
+              onClick={() => window.location.reload()}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+              aria-label="Reload page"
+              title="Reload page"
+            >
+              <RefreshCw className="h-5 w-5" />
+            </button>
+            
             {/* Notification Bell with Dropdown */}
             <div className="relative" ref={notificationRef}>
               <button 
