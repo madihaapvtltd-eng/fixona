@@ -51,11 +51,14 @@ export function WorkOrdersPage() {
       const allWorkOrders = snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => ({ id: d.id, ...d.data() }));
       
       // For non-admin users, filter to only show assigned work orders or ones they created
+      // Also show work orders with legacy createdBy values ('user', 'unknown')
       if (!canViewAllWorkOrders && userRole !== 'super_admin' && userRole !== 'dept_admin') {
         return allWorkOrders.filter((wo: any) => 
           wo.technicianId === user?.id || 
           wo.supervisorId === user?.id ||
-          wo.createdBy === user?.id
+          wo.createdBy === user?.id ||
+          wo.createdBy === 'user' ||  // Legacy work orders
+          wo.createdBy === 'unknown'   // Fallback work orders
         );
       }
       

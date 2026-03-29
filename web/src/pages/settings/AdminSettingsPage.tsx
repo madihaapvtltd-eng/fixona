@@ -94,6 +94,11 @@ export function AdminSettingsPage() {
             <option value="warehouse">Warehouse</option>
             <option value="godown">Godown</option>
             <option value="office">Office</option>
+            <option value="accommodation">Accommodation</option>
+            <option value="rented">Rented Property</option>
+            <option value="galolhu">Galolhu</option>
+            <option value="doores">Doores</option>
+            <option value="other">Other</option>
           </select>
         </div>
         <button
