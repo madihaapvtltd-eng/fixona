@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Settings, MapPin, Building2, Plus, Trash2, Save, Edit2 } from 'lucide-react';
+import { Settings, MapPin, Building2, Plus, Trash2, Save, Edit2, Download } from 'lucide-react';
+import { ALL_LOCATIONS } from '@/lib/locations';
 import toast from 'react-hot-toast';
 
 export function AdminSettingsPage() {
@@ -62,6 +63,32 @@ export function AdminSettingsPage() {
     await deleteDoc(doc(db, 'settings', 'departments', 'items', id));
     loadSettings();
     toast.success('Department deleted');
+  };
+
+  const importStaticLocations = async () => {
+    const locationsRef = collection(db, 'settings', 'locations', 'items');
+    
+    // Check which locations already exist
+    const existingSnap = await getDocs(locationsRef);
+    const existingValues = new Set(existingSnap.docs.map(d => d.data().value));
+    
+    let imported = 0;
+    for (const loc of ALL_LOCATIONS) {
+      if (!existingValues.has(loc.value)) {
+        await addDoc(locationsRef, {
+          value: loc.value,
+          label: loc.label,
+          type: loc.value.startsWith('UF') || loc.value === 'UBS' ? 'shop' :
+                loc.value.startsWith('HMCGD') ? 'warehouse' :
+                loc.value.startsWith('MCG') ? 'godown' : 'other',
+          shortName: loc.value.slice(0, 4)
+        });
+        imported++;
+      }
+    }
+    
+    loadSettings();
+    toast.success(`Imported ${imported} static locations to admin`);
   };
 
   return (
@@ -127,6 +154,14 @@ export function AdminSettingsPage() {
         >
           <Plus className="h-4 w-4" />
           Add Location
+        </button>
+        <button
+          onClick={importStaticLocations}
+          className="btn btn-secondary inline-flex items-center gap-2 ml-2"
+          title="Import all 53 static locations (UFANVELI shops, Hulhumale containers, Male godowns)"
+        >
+          <Download className="h-4 w-4" />
+          Import Static Locations
         </button>
 
         <div className="mt-6 space-y-2">
