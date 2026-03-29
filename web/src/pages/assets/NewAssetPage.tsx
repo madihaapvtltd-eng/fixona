@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQueryClient } from 'react-query';
 import { ImageUpload } from '@/components/ui/ImageUpload';
+import { SearchableLocationDropdown } from '@/components/ui/SearchableLocationDropdown';
 import { uploadMultipleImages } from '@/lib/cloudinary';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, addDoc, getDocs } from 'firebase/firestore';
@@ -293,58 +294,13 @@ export function NewAssetPage() {
             </div>
 
             <div>
-              <label className="label">Location *</label>
-              <select
-                required
-                className="input"
+              <SearchableLocationDropdown
+                label="Location"
+                locations={[...dynamicLocations, ...ALL_LOCATIONS]}
                 value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              >
-                <option value="">Select Location</option>
-                
-                {/* Dynamic locations from Firebase (admin added) */}
-                {dynamicLocations.length > 0 && (
-                  <optgroup label="Custom Locations (Admin Added)">
-                    {dynamicLocations.map((loc: any) => {
-                      const type = loc.type ? `${loc.type.charAt(0).toUpperCase()}${loc.type.slice(1)}` : '';
-                      const value = loc.value || loc.id || '';
-                      const label = loc.label || '';
-                      // Format: Type - Value - Label (e.g., "Accommodation - Ashiya Mazil - 1st Floor")
-                      const displayLabel = type && value && label 
-                        ? `${type} - ${value} - ${label}`
-                        : type && label 
-                          ? `${type} - ${label}`
-                          : label || value || 'Unknown';
-                      return (
-                        <option key={loc.id} value={loc.value}>
-                          {displayLabel}
-                        </option>
-                      );
-                    })}
-                  </optgroup>
-                )}
-                
-                {/* Static UFANVELI Shops */}
-                <optgroup label="UFANVELI Shops">
-                  {ALL_LOCATIONS.filter(l => l.value.startsWith('UF') || l.value === 'UBS').map(loc => (
-                    <option key={loc.value} value={loc.value}>{loc.label}</option>
-                  ))}
-                </optgroup>
-                
-                {/* Static HULHUMALE GODOWN */}
-                <optgroup label="HULHUMALE GODOWN (HMCGD)">
-                  {ALL_LOCATIONS.filter(l => l.value.startsWith('HMCGD')).map(loc => (
-                    <option key={loc.value} value={loc.value}>{loc.label}</option>
-                  ))}
-                </optgroup>
-                
-                {/* Static MALE CENTRAL GODOWN */}
-                <optgroup label="MALE CENTRAL GODOWN (MCG)">
-                  {ALL_LOCATIONS.filter(l => l.value.startsWith('MCG')).map(loc => (
-                    <option key={loc.value} value={loc.value}>{loc.label}</option>
-                  ))}
-                </optgroup>
-              </select>
+                onChange={(value) => setFormData({ ...formData, location: value })}
+                required
+              />
             </div>
 
             <div>

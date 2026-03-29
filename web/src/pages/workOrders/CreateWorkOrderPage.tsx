@@ -6,6 +6,7 @@ import { ALL_LOCATIONS } from '@/lib/locations';
 import { DEPARTMENTS } from '@/lib/departments';
 import { WORK_TYPES, getWorkTypeLabel } from '@/lib/workTypes';
 import { ImageUpload } from '@/components/ui/ImageUpload';
+import { SearchableLocationDropdown } from '@/components/ui/SearchableLocationDropdown';
 import { useAuthStore } from '@/stores/authStore';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Plus, Palette, Wrench, Monitor, Megaphone, ShoppingCart, Users, Calculator, Clipboard, Package } from 'lucide-react';
@@ -216,23 +217,13 @@ export function CreateWorkOrderPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="label">Location * ({allLocations.length} available)</label>
-            <select
-              required
-              className="input"
+            <SearchableLocationDropdown
+              label={`Location (${allLocations.length} available)`}
+              locations={allLocations}
               value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-            >
-              <option value="">Select Location</option>
-              {allLocations.length === 0 && (
-                <option value="" disabled>No locations loaded - check console</option>
-              )}
-              {allLocations.map((loc: any, index: number) => (
-                <option key={`${loc.value || loc.id || index}`} value={loc.value || loc.id}>
-                  {getLocationOptionLabel(loc)}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setFormData({ ...formData, location: value })}
+              required
+            />
             {dynamicLocations.length === 0 && (
               <p className="text-xs text-orange-500 mt-1">
                 No dynamic locations loaded from Firebase

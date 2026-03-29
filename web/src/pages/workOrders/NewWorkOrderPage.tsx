@@ -4,6 +4,7 @@ import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuthStore } from '@/stores/authStore';
 import { ALL_LOCATIONS } from '@/lib/locations';
+import { SearchableLocationDropdown } from '@/components/ui/SearchableLocationDropdown';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Wrench, Calendar, User, FileText, Building2 } from 'lucide-react';
 
@@ -89,30 +90,13 @@ export function NewWorkOrderPage() {
             </div>
 
             <div>
-              <label className="label">Location *</label>
-              <select
-                required
-                className="input"
+              <SearchableLocationDropdown
+                label="Location"
+                locations={ALL_LOCATIONS}
                 value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              >
-                <option value="">Select Location</option>
-                <optgroup label="UFANVELI Shops">
-                  {ALL_LOCATIONS.filter(l => l.value.startsWith('UF') || l.value === 'UBS').map(loc => (
-                    <option key={loc.value} value={loc.value}>{loc.label}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="HULHUMALE GODOWN (HMCGD)">
-                  {ALL_LOCATIONS.filter(l => l.value.startsWith('HMCGD')).map(loc => (
-                    <option key={loc.value} value={loc.value}>{loc.label}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="MALE CENTRAL GODOWN (MCG)">
-                  {ALL_LOCATIONS.filter(l => l.value.startsWith('MCG')).map(loc => (
-                    <option key={loc.value} value={loc.value}>{loc.label}</option>
-                  ))}
-                </optgroup>
-              </select>
+                onChange={(value) => setFormData({ ...formData, location: value })}
+                required
+              />
             </div>
 
             <div>
