@@ -354,8 +354,8 @@ export function TechnicianMobilePage() {
       if (navigator.onLine) {
         const q = query(
           collection(db, 'work_orders'),
-          where('technicianId', '==', user.id),
-          where('status', 'in', ['assigned_to_technician', 'in_progress', 'need_to_buy'])
+          where('assignedToId', '==', user.id),
+          where('status', 'in', ['assigned_to_technician', 'assigned_to_dept_admin', 'in_progress', 'need_to_buy', 'purchase_assigned_technician', 'purchase_assigned_purchasing'])
         );
         const snap = await getDocs(q);
         const orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -390,11 +390,11 @@ export function TechnicianMobilePage() {
       
       if (!assetSnap.empty) {
         const asset = assetSnap.docs[0];
-        // Find work orders for this asset
+        // Find work orders for this asset assigned to current user
         const woQuery = query(
           collection(db, 'work_orders'),
           where('assetId', '==', asset.id),
-          where('technicianId', '==', user?.id)
+          where('assignedToId', '==', user?.id)
         );
         const woSnap = await getDocs(woQuery);
         if (!woSnap.empty) {
