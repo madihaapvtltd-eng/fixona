@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Settings, MapPin, Building2, Plus, Trash2, Save, Edit2, Download } from 'lucide-react';
+import { Settings, MapPin, Building2, Plus, Trash2, Save, Edit2, Download, AlertTriangle } from 'lucide-react';
 import { ALL_LOCATIONS } from '@/lib/locations';
 import toast from 'react-hot-toast';
 
@@ -14,6 +14,10 @@ export function AdminSettingsPage() {
   const [editingLocation, setEditingLocation] = useState<string | null>(null);
   const [editShortName, setEditShortName] = useState('');
   const [importing, setImporting] = useState(false);
+  const [removingDuplicates, setRemovingDuplicates] = useState(false);
+
+  // Count duplicates for display
+  const duplicateCount = locations.length - new Set(locations.map(l => l.value)).size;
 
   useEffect(() => {
     loadSettings();
@@ -111,6 +115,37 @@ export function AdminSettingsPage() {
     }
   };
 
+  const removeDuplicates = async () => {
+    if (removingDuplicates) return;
+    setRemovingDuplicates(true);
+    
+    try {
+      // Group by value and keep only the first one
+      const seen = new Set<string>();
+      const toDelete: string[] = [];
+      
+      for (const loc of locations) {
+        if (seen.has(loc.value)) {
+          toDelete.push(loc.id);
+        } else {
+          seen.add(loc.value);
+        }
+      }
+      
+      // Delete duplicates
+      for (const id of toDelete) {
+        await deleteDoc(doc(db, 'settings', 'locations', 'items', id));
+      }
+      
+      await loadSettings();
+      toast.success(`Removed ${toDelete.length} duplicate locations`);
+    } catch (error) {
+      toast.error('Failed to remove duplicates');
+    } finally {
+      setRemovingDuplicates(false);
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       <div className="flex items-center gap-4">
@@ -184,6 +219,17 @@ export function AdminSettingsPage() {
           <Download className="h-4 w-4" />
           {importing ? 'Importing...' : 'Import Static Locations'}
         </button>
+        {duplicateCount > 0 && (
+          <button
+            onClick={removeDuplicates}
+            disabled={removingDuplicates}
+            className="btn btn-danger inline-flex items-center gap-2 ml-2 disabled:opacity-50 bg-red-100 text-red-700 hover:bg-red-200"
+            title={`Remove ${duplicateCount} duplicate locations`}
+          >
+            <AlertTriangle className="h-4 w-4" />
+            {removingDuplicates ? 'Removing...' : `Remove ${duplicateCount} Duplicates`}
+          </button>
+        )}
 
         <div className="mt-6 space-y-2">
           {locations.map((loc) => (
