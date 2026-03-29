@@ -97,6 +97,12 @@ export function CreateWorkOrderPage() {
   const allLocations = dynamicLocations.length > 0 ? dynamicLocations : ALL_LOCATIONS;
   const allDepartments = dynamicDepartments.length > 0 ? dynamicDepartments : DEPARTMENTS;
 
+  const getLocationOptionLabel = (loc: any) => {
+    const type = typeof loc?.type === 'string' && loc.type.trim() ? loc.type.trim() : '';
+    const label = loc?.label ?? '';
+    return type ? `${type.charAt(0).toUpperCase()}${type.slice(1)} - ${label}` : label;
+  };
+
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-4">
@@ -197,7 +203,7 @@ export function CreateWorkOrderPage() {
               <option value="">Select Location</option>
               {allLocations.map((loc: any) => (
                 <option key={loc.value || loc.id} value={loc.value || loc.id}>
-                  {loc.label}
+                  {getLocationOptionLabel(loc)}
                 </option>
               ))}
             </select>
