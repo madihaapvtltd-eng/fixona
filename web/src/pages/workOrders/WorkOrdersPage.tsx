@@ -91,7 +91,7 @@ export function WorkOrdersPage() {
   }, [refetch]);
 
   // Split work orders into active and completed
-  const activeStatuses = ['open', 'raised', 'assigned_to_supervisor', 'assigned_to_technician', 'in_progress', 
+  const activeStatuses = ['open', 'raised', 'assigned_to_supervisor', 'assigned_to_technician', 'assigned_to_dept_admin', 'in_progress', 
     'need_to_buy', 'purchase_assigned_technician', 'purchase_assigned_purchasing', 'quotation_in_progress',
     'quotation_submitted_for_signature', 'quotation_approved', 'quotation_rejected', 'payment_done',
     'items_collection_assigned', 'items_purchased', 'items_received', 'work_started_with_items', 
