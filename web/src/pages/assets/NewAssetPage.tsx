@@ -278,11 +278,22 @@ export function NewAssetPage() {
                 {/* Dynamic locations from Firebase (admin added) */}
                 {dynamicLocations.length > 0 && (
                   <optgroup label="Custom Locations (Admin Added)">
-                    {dynamicLocations.map((loc: any) => (
-                      <option key={loc.id} value={loc.value}>
-                        {loc.type ? `${loc.type.charAt(0).toUpperCase()}${loc.type.slice(1)} - ${loc.label}` : loc.label}
-                      </option>
-                    ))}
+                    {dynamicLocations.map((loc: any) => {
+                      const type = loc.type ? `${loc.type.charAt(0).toUpperCase()}${loc.type.slice(1)}` : '';
+                      const value = loc.value || loc.id || '';
+                      const label = loc.label || '';
+                      // Format: Type - Value - Label (e.g., "Accommodation - Ashiya Mazil - 1st Floor")
+                      const displayLabel = type && value && label 
+                        ? `${type} - ${value} - ${label}`
+                        : type && label 
+                          ? `${type} - ${label}`
+                          : label || value || 'Unknown';
+                      return (
+                        <option key={loc.id} value={loc.value}>
+                          {displayLabel}
+                        </option>
+                      );
+                    })}
                   </optgroup>
                 )}
                 

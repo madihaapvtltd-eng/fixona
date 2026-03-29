@@ -112,7 +112,18 @@ export function CreateWorkOrderPage() {
   const getLocationOptionLabel = (loc: any) => {
     const type = typeof loc?.type === 'string' && loc.type.trim() ? loc.type.trim() : '';
     const label = loc?.label ?? '';
-    return type ? `${type.charAt(0).toUpperCase()}${type.slice(1)} - ${label}` : label;
+    const value = loc?.value ?? loc?.id ?? '';
+    
+    // Format: Type - Value - Label (e.g., "Accommodation - Ashiya Mazil - 1st Floor")
+    if (type && value && label) {
+      return `${type.charAt(0).toUpperCase()}${type.slice(1)} - ${value} - ${label}`;
+    }
+    // Fallback: Type - Label
+    if (type && label) {
+      return `${type.charAt(0).toUpperCase()}${type.slice(1)} - ${label}`;
+    }
+    // Fallback: just label or value
+    return label || value || 'Unknown';
   };
 
   return (
