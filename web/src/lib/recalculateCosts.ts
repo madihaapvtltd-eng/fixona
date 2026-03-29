@@ -37,9 +37,19 @@ export async function recalculateAllWorkOrderCosts(): Promise<{
         const partsCost = (data.partsUsed || []).reduce((sum: number, part: any) => 
           sum + (part.totalCost || 0), 0);
         
-        // Calculate purchase cost from purchaseItems
-        const purchaseCost = (data.purchaseItems || []).reduce((sum: number, item: any) => 
-          sum + ((item.estimatedCost || 0) * (item.quantity || 0)), 0);
+        // Extract purchase data from workflowHistory where stage is 'need_to_buy'
+        const purchaseEvents = (data.workflowHistory || []).filter((h: any) => h.stage === 'need_to_buy');
+        const lastPurchaseEvent = purchaseEvents[purchaseEvents.length - 1];
+        
+        // Calculate purchase cost from purchaseItems in workflowHistory
+        let purchaseCost = 0;
+        if (lastPurchaseEvent?.purchaseItems && lastPurchaseEvent.purchaseItems.length > 0) {
+          purchaseCost = lastPurchaseEvent.purchaseItems.reduce((sum: number, item: any) => 
+            sum + ((item.estimatedCost || 0) * (item.quantity || 0)), 0);
+        } else if (lastPurchaseEvent?.purchaseCost) {
+          // Use stored purchaseCost if available
+          purchaseCost = lastPurchaseEvent.purchaseCost;
+        }
         
         // Use existing laborCost or default to 0
         const laborCost = data.laborCost || 0;
@@ -117,9 +127,18 @@ export async function recalculateWorkOrderCost(workOrderId: string): Promise<{
     const partsCost = (data.partsUsed || []).reduce((sum: number, part: any) => 
       sum + (part.totalCost || 0), 0);
     
-    // Calculate purchase cost from purchaseItems
-    const purchaseCost = (data.purchaseItems || []).reduce((sum: number, item: any) => 
-      sum + ((item.estimatedCost || 0) * (item.quantity || 0)), 0);
+    // Extract purchase data from workflowHistory where stage is 'need_to_buy'
+    const purchaseEvents = (data.workflowHistory || []).filter((h: any) => h.stage === 'need_to_buy');
+    const lastPurchaseEvent = purchaseEvents[purchaseEvents.length - 1];
+    
+    // Calculate purchase cost from purchaseItems in workflowHistory
+    let purchaseCost = 0;
+    if (lastPurchaseEvent?.purchaseItems && lastPurchaseEvent.purchaseItems.length > 0) {
+      purchaseCost = lastPurchaseEvent.purchaseItems.reduce((sum: number, item: any) => 
+        sum + ((item.estimatedCost || 0) * (item.quantity || 0)), 0);
+    } else if (lastPurchaseEvent?.purchaseCost) {
+      purchaseCost = lastPurchaseEvent.purchaseCost;
+    }
     
     // Use existing laborCost or default to 0
     const laborCost = data.laborCost || 0;
