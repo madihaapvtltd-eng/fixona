@@ -331,10 +331,28 @@ export function WorkOrdersPage() {
                       <div>
                         <p className="text-xs text-gray-500">Duration</p>
                         <p className="font-medium">
-                          {wo.startedAt && wo.completedAt 
-                            ? `${Math.ceil((wo.completedAt.toDate() - wo.startedAt.toDate()) / (1000 * 60 * 60))} hours`
-                            : 'N/A'
-                          }
+                          {(() => {
+                            // Get start and end timestamps from stageTimestamps
+                            const startTime = wo.stageTimestamps?.in_progress || wo.stageTimestamps?.assigned_to_technician || wo.stageTimestamps?.raised;
+                            const endTime = wo.stageTimestamps?.completed;
+                            
+                            if (startTime && endTime) {
+                              const start = new Date(startTime);
+                              const end = new Date(endTime);
+                              const diffMs = end.getTime() - start.getTime();
+                              const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                              const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                              
+                              if (diffHours > 0) {
+                                return `${diffHours}h ${diffMinutes}m`;
+                              } else if (diffMinutes > 0) {
+                                return `${diffMinutes} min`;
+                              } else {
+                                return `${Math.floor(diffMs / 1000)} sec`;
+                              }
+                            }
+                            return 'N/A';
+                          })()}
                         </p>
                       </div>
                       <div>
