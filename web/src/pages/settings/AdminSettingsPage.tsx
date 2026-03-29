@@ -13,6 +13,7 @@ export function AdminSettingsPage() {
   const [loading, setLoading] = useState(false);
   const [editingLocation, setEditingLocation] = useState<string | null>(null);
   const [editShortName, setEditShortName] = useState('');
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -66,15 +67,25 @@ export function AdminSettingsPage() {
   };
 
   const importStaticLocations = async () => {
-    const locationsRef = collection(db, 'settings', 'locations', 'items');
+    if (importing) return; // Prevent multiple clicks
+    setImporting(true);
     
-    // Check which locations already exist
-    const existingSnap = await getDocs(locationsRef);
-    const existingValues = new Set(existingSnap.docs.map(d => d.data().value));
-    
-    let imported = 0;
-    for (const loc of ALL_LOCATIONS) {
-      if (!existingValues.has(loc.value)) {
+    try {
+      const locationsRef = collection(db, 'settings', 'locations', 'items');
+      
+      // Check which locations already exist
+      const existingSnap = await getDocs(locationsRef);
+      const existingValues = new Set(existingSnap.docs.map(d => d.data().value));
+      
+      let imported = 0;
+      let skipped = 0;
+      
+      for (const loc of ALL_LOCATIONS) {
+        if (existingValues.has(loc.value)) {
+          skipped++;
+          continue;
+        }
+        
         await addDoc(locationsRef, {
           value: loc.value,
           label: loc.label,
@@ -85,10 +96,19 @@ export function AdminSettingsPage() {
         });
         imported++;
       }
+      
+      await loadSettings();
+      
+      if (imported === 0) {
+        toast.success(`All ${skipped} locations already imported - no duplicates created`);
+      } else {
+        toast.success(`Imported ${imported} new locations, skipped ${skipped} existing`);
+      }
+    } catch (error) {
+      toast.error('Failed to import locations');
+    } finally {
+      setImporting(false);
     }
-    
-    loadSettings();
-    toast.success(`Imported ${imported} static locations to admin`);
   };
 
   return (
@@ -157,11 +177,12 @@ export function AdminSettingsPage() {
         </button>
         <button
           onClick={importStaticLocations}
-          className="btn btn-secondary inline-flex items-center gap-2 ml-2"
+          disabled={importing}
+          className="btn btn-secondary inline-flex items-center gap-2 ml-2 disabled:opacity-50"
           title="Import all 53 static locations (UFANVELI shops, Hulhumale containers, Male godowns)"
         >
           <Download className="h-4 w-4" />
-          Import Static Locations
+          {importing ? 'Importing...' : 'Import Static Locations'}
         </button>
 
         <div className="mt-6 space-y-2">
