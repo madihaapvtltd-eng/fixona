@@ -22,6 +22,7 @@ import { CreateWorkOrderPage } from '@/pages/workOrders/CreateWorkOrderPage';
 import { ProjectsListPage } from '@/pages/projects/ProjectsListPage';
 import { ProjectDetailPage } from '@/pages/projects/ProjectDetailPage';
 import { CreateProjectPage } from '@/pages/projects/CreateProjectPage';
+import { EditProjectPage } from '@/pages/projects/EditProjectPage';
 import { InventoryPage } from '@/pages/inventory/InventoryPage';
 import { InventoryDetailPage } from '@/pages/inventory/InventoryDetailPage';
 import { StaffPage } from '@/pages/staff/StaffPage';
@@ -96,6 +97,7 @@ function App() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/projects" element={<ProjectsListPage />} />
         <Route path="/projects/create" element={<CreateProjectPage />} />
+        <Route path="/projects/:id/edit" element={<EditProjectPage />} />
         <Route path="/projects/:id" element={<ProjectDetailPage />} />
         <Route path="/assets" element={<AssetsPage />} />
         <Route path="/assets/new" element={<NewAssetPage />} />

@@ -6,7 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.2.0] - 2026-03-28
+## [1.2.1] - 2026-03-30
+
+### Added
+
+#### Project Management
+- **Edit Project Page**: New dedicated page for editing existing projects
+  - Route: `/projects/:id/edit`
+  - Full form with all project fields: basic info, department breakdown, contractors, payment schedule
+  - Pre-fills existing data from Firestore
+  - Updates project with user tracking (updatedBy, updatedByName)
+
+### Fixed
+
+#### Service Worker & Firestore Errors
+- **Fixed Firestore Caching Errors**: Changed Firestore API caching from `NetworkFirst` to `NetworkOnly`
+  - Resolves: `Failed to execute 'put' on 'Cache': Cache.put() encountered a network error`
+  - Resolves: `WebChannelConnection RPC 'Listen' stream transport errored`
+  - Firestore WebChannel streaming connections should not be cached
+  - Note: Clear browser cache and unregister old service workers to fully apply fix
+
+---
 
 ### Added
 
@@ -151,6 +171,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 1.2.1 | 2026-03-30 | Edit project page, fixed Firestore service worker caching errors |
 | 1.2.0 | 2026-03-28 | Detailed purchase workflow, activity history improvements, asset management fixes |
 | 1.1.0 | 2026-03-20 | Complete work order system, multi-role support, notifications, asset management |
 | 1.0.0 | 2026-03-01 | Initial release with basic functionality |
@@ -183,6 +204,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## Migration Notes
+
+### v1.2.0 to v1.2.1
+- **Service Worker Cache Clear Required**: To fix Firestore caching errors, clear browser cache:
+  1. Open DevTools (F12) → Application tab → Service Workers
+  2. Click "Unregister" for the Fixora service worker
+  3. Check "Update on reload" and refresh the page
+  4. Or use: DevTools → Clear Site Data → Clear all data
+- No data migration required
 
 ### v1.1.0 to v1.2.0
 - Workflow status codes updated - old `quotation_requested` and `quotation_received` replaced with new detailed stages

@@ -75,14 +75,7 @@ export default defineConfig({
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'firebase-api-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              }
-            }
+            handler: 'NetworkOnly'
           },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

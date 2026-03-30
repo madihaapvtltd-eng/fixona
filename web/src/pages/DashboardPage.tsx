@@ -48,7 +48,7 @@ function StatCard({ title, value, change, icon: Icon, color, href }: StatCardPro
     <div className="card hover:shadow-md transition-shadow">
       <div className="flex items-center">
         <div className={`p-3 rounded-lg ${color}`}>
-          <Icon className="h-6 w-6 text-white" />
+          {typeof Icon === 'function' ? <Icon className="h-6 w-6 text-white" /> : Icon}
         </div>
         <div className="ml-4">
           <p className="text-sm font-medium text-gray-600">{title}</p>
