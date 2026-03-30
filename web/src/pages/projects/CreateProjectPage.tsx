@@ -32,6 +32,26 @@ interface Payment {
   paidTo: string;
 }
 
+interface Expense {
+  id: string;
+  description: string;
+  amount: number;
+  category: 'material' | 'labor' | 'equipment' | 'contractor' | 'other';
+  department: string;
+  date: string;
+  paidTo: string;
+  notes?: string;
+}
+
+interface FinancialSummary {
+  estimatedTotal: number;
+  actualTotal: number;
+  budget: number;
+  variance: number;
+  departmentBreakdown: { department: string; estimated: number; actual: number }[];
+  partyBreakdown: { party: string; amount: number; type: 'internal' | 'contractor' }[];
+}
+
 const departments = [
   'Electrical',
   'Mechanical',
@@ -76,12 +96,105 @@ export function CreateProjectPage() {
     { type: 'advance', amount: 0, percentage: 0, description: '', paidTo: '' }
   ]);
 
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+
+  // Calculate financial summary
+  const calculateFinancialSummary = (): FinancialSummary => {
+    const estimatedDeptTotal = departmentWorks
+      .filter(w => w.department)
+      .reduce((sum, w) => sum + (w.estimatedCost || 0), 0);
+    
+    const contractTotal = contracts
+      .filter(c => c.contractorName)
+      .reduce((sum, c) => sum + (c.contractValue || 0), 0);
+    
+    const estimatedTotal = estimatedDeptTotal + contractTotal;
+    const actualTotal = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const budget = Number(formData.budget) || 0;
+    
+    // Department breakdown
+    const deptMap = new Map<string, { estimated: number; actual: number }>();
+    departments.forEach(d => deptMap.set(d, { estimated: 0, actual: 0 }));
+    
+    departmentWorks.forEach(w => {
+      if (w.department) {
+        const current = deptMap.get(w.department) || { estimated: 0, actual: 0 };
+        deptMap.set(w.department, { ...current, estimated: current.estimated + (w.estimatedCost || 0) });
+      }
+    });
+    
+    expenses.forEach(e => {
+      if (e.department) {
+        const current = deptMap.get(e.department) || { estimated: 0, actual: 0 };
+        deptMap.set(e.department, { ...current, actual: current.actual + (e.amount || 0) });
+      }
+    });
+    
+    const departmentBreakdown = Array.from(deptMap.entries())
+      .filter(([_, v]) => v.estimated > 0 || v.actual > 0)
+      .map(([dept, costs]) => ({ department: dept, ...costs }));
+    
+    // Party breakdown
+    const partyMap = new Map<string, { amount: number; type: 'internal' | 'contractor' }>();
+    
+    contracts.forEach(c => {
+      if (c.contractorName) {
+        const current = partyMap.get(c.contractorName)?.amount || 0;
+        partyMap.set(c.contractorName, { amount: current + (c.contractValue || 0), type: 'contractor' });
+      }
+    });
+    
+    expenses.forEach(e => {
+      if (e.paidTo) {
+        const current = partyMap.get(e.paidTo)?.amount || 0;
+        const type = contracts.some(c => c.contractorName === e.paidTo) ? 'contractor' : 'internal';
+        partyMap.set(e.paidTo, { amount: current + (e.amount || 0), type });
+      }
+    });
+    
+    const partyBreakdown = Array.from(partyMap.entries())
+      .map(([party, data]) => ({ party, ...data }));
+    
+    return {
+      estimatedTotal,
+      actualTotal,
+      budget,
+      variance: budget - actualTotal,
+      departmentBreakdown,
+      partyBreakdown
+    };
+  };
+
+  const addExpense = () => {
+    setExpenses([...expenses, { 
+      id: `exp-${Date.now()}`,
+      description: '', 
+      amount: 0, 
+      category: 'other',
+      department: '',
+      date: new Date().toISOString().split('T')[0],
+      paidTo: ''
+    }]);
+  };
+
+  const removeExpense = (index: number) => {
+    setExpenses(expenses.filter((_, i) => i !== index));
+  };
+
+  const updateExpense = (index: number, field: string, value: any) => {
+    const updated = [...expenses];
+    updated[index] = { ...updated[index], [field]: value };
+    setExpenses(updated);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       const projectNumber = `PRJ-${Date.now()}`;
+      
+      const financialSummary = calculateFinancialSummary();
       
       const projectData = {
         projectNumber,
@@ -95,7 +208,14 @@ export function CreateProjectPage() {
           paidDate: null,
           status: 'pending'
         })),
-        totalCost: 0,
+        expenses: expenses.filter(e => e.description && e.amount > 0),
+        financialSummary: {
+          ...financialSummary,
+          createdAt: serverTimestamp()
+        },
+        estimatedTotalCost: financialSummary.estimatedTotal,
+        actualTotalCost: financialSummary.actualTotal,
+        totalCost: financialSummary.actualTotal,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         createdBy: user?.id || 'unknown',
@@ -610,6 +730,227 @@ export function CreateProjectPage() {
                         <Trash2 className="h-5 w-5" />
                       </button>
                     )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Financial Summary */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <DollarSign className="h-5 w-5 mr-2 text-primary-600" />
+            Financial Summary
+          </h2>
+          
+          {(() => {
+            const summary = calculateFinancialSummary();
+            return (
+              <div className="space-y-4">
+                {/* Summary Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600">Budget</p>
+                    <p className="text-xl font-bold text-blue-600">MVR {summary.budget.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-amber-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600">Estimated Total</p>
+                    <p className="text-xl font-bold text-amber-600">MVR {summary.estimatedTotal.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600">Actual Expenses</p>
+                    <p className="text-xl font-bold text-green-600">MVR {summary.actualTotal.toLocaleString()}</p>
+                  </div>
+                  <div className={`p-4 rounded-lg ${summary.variance >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+                    <p className="text-sm text-gray-600">Variance</p>
+                    <p className={`text-xl font-bold ${summary.variance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      MVR {summary.variance.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Department Breakdown */}
+                {summary.departmentBreakdown.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Department Breakdown</h3>
+                    <div className="bg-gray-50 rounded-lg overflow-hidden">
+                      <table className="min-w-full text-sm">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-4 py-2 text-left">Department</th>
+                            <th className="px-4 py-2 text-right">Estimated</th>
+                            <th className="px-4 py-2 text-right">Actual</th>
+                            <th className="px-4 py-2 text-right">Variance</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {summary.departmentBreakdown.map((dept) => (
+                            <tr key={dept.department} className="border-t">
+                              <td className="px-4 py-2">{dept.department}</td>
+                              <td className="px-4 py-2 text-right">MVR {dept.estimated.toLocaleString()}</td>
+                              <td className="px-4 py-2 text-right">MVR {dept.actual.toLocaleString()}</td>
+                              <td className={`px-4 py-2 text-right ${dept.estimated - dept.actual >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                MVR {(dept.estimated - dept.actual).toLocaleString()}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Party Breakdown */}
+                {summary.partyBreakdown.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Party/Contractor Breakdown</h3>
+                    <div className="bg-gray-50 rounded-lg overflow-hidden">
+                      <table className="min-w-full text-sm">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-4 py-2 text-left">Party</th>
+                            <th className="px-4 py-2 text-left">Type</th>
+                            <th className="px-4 py-2 text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {summary.partyBreakdown.map((party) => (
+                            <tr key={party.party} className="border-t">
+                              <td className="px-4 py-2">{party.party}</td>
+                              <td className="px-4 py-2">
+                                <span className={`badge ${party.type === 'contractor' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                                  {party.type}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2 text-right font-medium">MVR {party.amount.toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Expenses Tracking */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+              <DollarSign className="h-5 w-5 mr-2 text-primary-600" />
+              Expenses & Investments
+            </h2>
+            <button
+              type="button"
+              onClick={addExpense}
+              className="inline-flex items-center px-3 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Expense
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {expenses.length === 0 && (
+              <p className="text-gray-500 text-sm italic">No expenses recorded yet. Click "Add Expense" to track project costs.</p>
+            )}
+            {expenses.map((expense, index) => (
+              <div key={expense.id} className="p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <input
+                      type="text"
+                      value={expense.description}
+                      onChange={(e) => updateExpense(index, 'description', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      placeholder="What was purchased?"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount (MVR)</label>
+                    <input
+                      type="number"
+                      value={expense.amount}
+                      onChange={(e) => updateExpense(index, 'amount', Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select
+                      value={expense.category}
+                      onChange={(e) => updateExpense(index, 'category', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="material">Material</option>
+                      <option value="labor">Labor</option>
+                      <option value="equipment">Equipment</option>
+                      <option value="contractor">Contractor</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                    <select
+                      value={expense.department}
+                      onChange={(e) => updateExpense(index, 'department', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="">Select Dept</option>
+                      {departments.map(dept => (
+                        <option key={dept} value={dept}>{dept}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                      <input
+                        type="date"
+                        value={expense.date}
+                        onChange={(e) => updateExpense(index, 'date', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeExpense(index)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Paid To</label>
+                    <input
+                      type="text"
+                      value={expense.paidTo}
+                      onChange={(e) => updateExpense(index, 'paidTo', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      placeholder="Person or company paid"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                    <input
+                      type="text"
+                      value={expense.notes || ''}
+                      onChange={(e) => updateExpense(index, 'notes', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      placeholder="Additional details"
+                    />
                   </div>
                 </div>
               </div>
