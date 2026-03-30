@@ -44,18 +44,21 @@ function App() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('[Auth] Initializing auth state listener...');
+    
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log('[Auth] onAuthStateChanged fired:', firebaseUser ? 'User found' : 'No user');
+      
       if (firebaseUser) {
         try {
-          // Get additional user data from Firestore
+          console.log('[Auth] Fetching user data from Firestore...');
           const { getDoc, doc, db } = await import('@/lib/firebase');
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           const userData = userDoc.data();
           
-          // Set user even if Firestore doc doesn't exist yet
-          // IMPORTANT: name should be person's name, not department
+          console.log('[Auth] User data fetched:', userData);
+          
           const userName = userData?.name || firebaseUser.displayName || '';
-          // Filter out department name if it's mistakenly stored as 'name'
           const cleanName = userName && (userName.toLowerCase() === userData?.department?.toLowerCase() || 
                                          userName.toLowerCase() === userData?.role?.toLowerCase()) 
                             ? firebaseUser.displayName || userData?.email?.split('@')[0] || '' 
@@ -66,27 +69,34 @@ function App() {
             email: firebaseUser.email!,
             role: userData?.role || 'staff',
             ...userData,
-            name: cleanName, // Ensure name is always the person's name, not department
+            name: cleanName,
           });
         } catch (error) {
-          console.error('Error loading user data:', error);
+          console.error('[Auth] Error loading user data:', error);
         }
       } else {
+        console.log('[Auth] Setting user to null');
         setUser(null);
       }
+      
+      console.log('[Auth] Setting loading to false');
       setLoading(false);
     });
 
     // Timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
+      console.log('[Auth] Timeout reached, forcing loading to false');
       setLoading(false);
-    }, 5000);
+    }, 3000);
 
     return () => {
+      console.log('[Auth] Cleaning up auth listener');
       unsubscribe();
       clearTimeout(timeoutId);
     };
   }, [setUser, setLoading]);
+
+  console.log('[App] Rendering, loading:', loading, 'user:', user ? 'yes' : 'no');
 
   if (loading) {
     return (
