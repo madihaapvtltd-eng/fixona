@@ -100,8 +100,20 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <p className="text-gray-500">Loading...</p>
+        <button
+          onClick={() => {
+            // Emergency reset
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.reload();
+          }}
+          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+        >
+          Stuck? Click to Reset
+        </button>
       </div>
     );
   }
