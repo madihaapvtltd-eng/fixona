@@ -602,6 +602,20 @@ VITE_CLOUDINARY_UPLOAD_PRESET=your_upload_preset
 
 ### Common Issues
 
+**Issue**: Blank/white page after refreshing (solved in v1.2.2)
+**Solution**: Auth loading state now starts as `false`. If still stuck:
+1. Click the red "Stuck? Click to Reset" button on loading screen
+2. Or open DevTools → Application → Storage → Clear site data → Refresh
+
+**Issue**: "Minified React error #31" with component keys (solved in v1.2.2)
+**Solution**: Fixed StatCard icon rendering. If error persists:
+1. Clear browser cache completely
+2. Hard refresh with Ctrl+Shift+R
+3. Check that all icon imports are from 'lucide-react'
+
+**Issue**: 404 error when editing projects directly via URL (solved in v1.2.2)
+**Solution**: Router order fixed and Vercel rewrites updated. Access `/projects/:id/edit` directly now works.
+
 **Issue**: Technician can't see assigned work orders
 **Solution**: Check WorkOrdersPage.tsx query - ensure it filters by assigned technicianId client-side if needed
 
@@ -691,6 +705,6 @@ firebase firestore:export ./backups/$(date +%Y%m%d)
 
 ## Version
 
-Current Version: **1.2.0**
+Current Version: **1.2.2**
 
-Last Updated: March 28, 2026
+Last Updated: March 31, 2026

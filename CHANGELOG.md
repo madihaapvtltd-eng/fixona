@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.2.2] - 2026-03-31
+
+### Fixed
+
+#### Application Loading & Routing
+- **Fixed Blank Page on Reload**: Changed auth loading state to start as `false`
+  - Resolves: Application showing blank/white screen after page refresh
+  - Auth state now initializes without blocking render
+  - User sees login page or dashboard immediately
+
+- **Fixed React Error #31 (StatCard Icons)**: Simplified icon rendering in DashboardPage
+  - Resolves: `Minified React error #31` with `$$typeof, render, displayName`
+  - Removed `typeof Icon === 'function'` check that failed in production builds
+  - StatCard component now renders icons correctly in all environments
+
+- **Fixed Project Edit 404 Error**: Reordered React Router routes and updated Vercel config
+  - Resolves: 404 error when accessing `/projects/:id/edit` directly
+  - Moved specific `/projects/:id/edit` route before generic `/projects/:id` route
+  - Updated `vercel.json` with proper SPA rewrite rules
+
+### Added
+
+#### Error Handling
+- **ErrorBoundary Component**: Global error catching for better debugging
+  - Catches and displays React errors gracefully
+  - Shows error message and component stack trace
+  - Includes "Clear cache and reload" button for recovery
+  - Wraps entire application in main.tsx
+
+---
+
 ## [1.2.1] - 2026-03-30
 
 ### Added
@@ -171,6 +202,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 1.2.2 | 2026-03-31 | Fixed blank page on reload, React error #31, project edit 404, added ErrorBoundary |
 | 1.2.1 | 2026-03-30 | Edit project page, fixed Firestore service worker caching errors |
 | 1.2.0 | 2026-03-28 | Detailed purchase workflow, activity history improvements, asset management fixes |
 | 1.1.0 | 2026-03-20 | Complete work order system, multi-role support, notifications, asset management |
@@ -204,6 +236,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## Migration Notes
+
+### v1.2.1 to v1.2.2
+- **No data migration required**
+- **Cache clear recommended**: To ensure all fixes apply, clear browser cache:
+  1. Open DevTools (F12) → Application tab → Storage → Clear site data
+  2. Or use the red "Stuck? Click to Reset" button on loading screen
+  3. Refresh the page (F5)
 
 ### v1.2.0 to v1.2.1
 - **Service Worker Cache Clear Required**: To fix Firestore caching errors, clear browser cache:
