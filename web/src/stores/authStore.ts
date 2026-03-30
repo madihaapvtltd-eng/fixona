@@ -17,6 +17,7 @@ interface AuthState {
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   logout: () => void;
+  clearStorage: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -30,9 +31,21 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null });
         localStorage.removeItem('auth-storage');
       },
+      clearStorage: () => {
+        set({ user: null, loading: false });
+        localStorage.removeItem('auth-storage');
+        sessionStorage.clear();
+        // Clear all caches
+        if ('caches' in window) {
+          caches.keys().then((names) => {
+            names.forEach((name) => caches.delete(name));
+          });
+        }
+      },
     }),
     {
       name: 'auth-storage',
+      partialize: (state) => ({ user: state.user }), // Only persist user, not loading state
     }
   )
 );

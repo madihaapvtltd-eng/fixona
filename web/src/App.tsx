@@ -46,34 +46,46 @@ function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Get additional user data from Firestore
-        const { getDoc, doc, db } = await import('@/lib/firebase');
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        const userData = userDoc.data();
-        
-        // Set user even if Firestore doc doesn't exist yet
-        // IMPORTANT: name should be person's name, not department
-        const userName = userData?.name || firebaseUser.displayName || '';
-        // Filter out department name if it's mistakenly stored as 'name'
-        const cleanName = userName && (userName.toLowerCase() === userData?.department?.toLowerCase() || 
-                                       userName.toLowerCase() === userData?.role?.toLowerCase()) 
-                          ? firebaseUser.displayName || userData?.email?.split('@')[0] || '' 
-                          : userName;
-        
-        setUser({
-          id: firebaseUser.uid,
-          email: firebaseUser.email!,
-          role: userData?.role || 'staff',
-          ...userData,
-          name: cleanName, // Ensure name is always the person's name, not department
-        });
+        try {
+          // Get additional user data from Firestore
+          const { getDoc, doc, db } = await import('@/lib/firebase');
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          const userData = userDoc.data();
+          
+          // Set user even if Firestore doc doesn't exist yet
+          // IMPORTANT: name should be person's name, not department
+          const userName = userData?.name || firebaseUser.displayName || '';
+          // Filter out department name if it's mistakenly stored as 'name'
+          const cleanName = userName && (userName.toLowerCase() === userData?.department?.toLowerCase() || 
+                                         userName.toLowerCase() === userData?.role?.toLowerCase()) 
+                            ? firebaseUser.displayName || userData?.email?.split('@')[0] || '' 
+                            : userName;
+          
+          setUser({
+            id: firebaseUser.uid,
+            email: firebaseUser.email!,
+            role: userData?.role || 'staff',
+            ...userData,
+            name: cleanName, // Ensure name is always the person's name, not department
+          });
+        } catch (error) {
+          console.error('Error loading user data:', error);
+        }
       } else {
         setUser(null);
       }
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    // Timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+    }, 5000);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(timeoutId);
+    };
   }, [setUser, setLoading]);
 
   if (loading) {
