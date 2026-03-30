@@ -24,7 +24,7 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      loading: true,
+      loading: false, // Start as false so app renders immediately
       setUser: (user) => set({ user }),
       setLoading: (loading) => set({ loading }),
       logout: () => {
@@ -45,7 +45,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ user: state.user }), // Only persist user, not loading state
+      partialize: (state) => ({ user: state.user, loading: false }), // Don't persist loading state
     }
   )
 );
