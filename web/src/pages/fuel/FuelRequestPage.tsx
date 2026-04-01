@@ -61,15 +61,18 @@ export function FuelRequestPage() {
   useEffect(() => {
     const loadVehicles = async () => {
       try {
-        const q = query(
-          collection(db, 'assets'),
-          where('type', 'in', ['vehicle', 'machinery'])
-        );
-        const snap = await getDocs(q);
-        const vehicleList = snap.docs.map(d => ({
+        // Load all assets and filter in memory to avoid index issues
+        const snap = await getDocs(collection(db, 'assets'));
+        const allAssets = snap.docs.map(d => ({
           id: d.id,
           ...d.data()
         })) as Vehicle[];
+        
+        // Filter for vehicle and machinery types
+        const vehicleList = allAssets.filter(a => 
+          a.type === 'vehicle' || a.type === 'machinery'
+        );
+        
         setVehicles(vehicleList);
       } catch (error) {
         console.error('Failed to load vehicles:', error);

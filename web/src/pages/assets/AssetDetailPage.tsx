@@ -77,7 +77,8 @@ export function AssetDetailPage() {
       setEditing(false);
       refetch();
     } catch (error) {
-      toast.error('Failed to update asset');
+      console.error('Failed to update asset:', error);
+      toast.error('Failed to update asset: ' + (error.message || 'Unknown error'));
     }
   };
 
