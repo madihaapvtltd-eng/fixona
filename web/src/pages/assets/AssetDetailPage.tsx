@@ -67,7 +67,8 @@ export function AssetDetailPage() {
         manufacturer: editForm.manufacturer,
         model: editForm.model,
         serialNumber: editForm.serialNumber,
-        category: editForm.category,
+        type: editForm.type,
+        vehicleCategory: editForm.vehicleCategory,
         status: editForm.status,
         riskLevel: editForm.riskLevel,
         updatedAt: new Date(),
@@ -105,7 +106,12 @@ export function AssetDetailPage() {
             QR Code
           </button>
           <button 
-            onClick={() => setEditing(true)}
+            onClick={() => {
+              if (!editForm && asset) {
+                setEditForm(asset);
+              }
+              setEditing(true);
+            }}
             className="btn-primary inline-flex items-center"
           >
             <Edit className="h-4 w-4 mr-2" />
@@ -142,9 +148,15 @@ export function AssetDetailPage() {
                 <p className="font-medium">{asset.serialNumber || 'N/A'}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Category</p>
-                <p className="font-medium">{asset.category}</p>
+                <p className="text-sm text-gray-500">Type</p>
+                <p className="font-medium capitalize">{asset.type || 'Equipment'}</p>
               </div>
+              {(asset.type === 'vehicle' || asset.type === 'machinery') && asset.vehicleCategory && (
+                <div>
+                  <p className="text-sm text-gray-500">Vehicle Category</p>
+                  <p className="font-medium capitalize">{asset.vehicleCategory}</p>
+                </div>
+              )}
               <div>
                 <p className="text-sm text-gray-500">Status</p>
                 <span className={`badge status-${asset.status}`}>{asset.status}</span>
@@ -310,14 +322,49 @@ export function AssetDetailPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <input
-                  type="text"
-                  value={editForm.category || ''}
-                  onChange={(e) => setEditForm({...editForm, category: e.target.value})}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Asset Type</label>
+                <select
+                  value={editForm.type || ''}
+                  onChange={(e) => setEditForm({...editForm, type: e.target.value})}
                   className="input w-full"
-                />
+                >
+                  <option value="equipment">Equipment</option>
+                  <option value="machinery">Machinery</option>
+                  <option value="vehicle">Vehicle</option>
+                  <option value="building">Building</option>
+                  <option value="it">IT Equipment</option>
+                  <option value="furniture">Furniture</option>
+                  <option value="other">Other</option>
+                </select>
               </div>
+              
+              {/* Vehicle Category - only show for vehicles */}
+              {(editForm.type === 'vehicle' || editForm.type === 'machinery') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Category</label>
+                  <select
+                    value={editForm.vehicleCategory || ''}
+                    onChange={(e) => setEditForm({...editForm, vehicleCategory: e.target.value})}
+                    className="input w-full"
+                  >
+                    <option value="">Select Category</option>
+                    <option value="sedan">Sedan</option>
+                    <option value="suv">SUV</option>
+                    <option value="pickup">Pickup Truck</option>
+                    <option value="truck">Truck</option>
+                    <option value="van">Van</option>
+                    <option value="bus">Bus</option>
+                    <option value="motorcycle">Motorcycle</option>
+                    <option value="forklift">Forklift</option>
+                    <option value="excavator">Excavator</option>
+                    <option value="bulldozer">Bulldozer</option>
+                    <option value="crane">Crane</option>
+                    <option value="generator">Generator</option>
+                    <option value="compressor">Compressor</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select

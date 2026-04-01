@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.2.3] - 2026-04-01
+
+### Added
+
+#### Vehicle Management
+- **Vehicle Categories**: Added 14 vehicle categories for asset classification
+  - Categories: Sedan, SUV, Pickup Truck, Truck, Van, Bus, Motorcycle, Forklift, Excavator, Bulldozer, Crane, Generator, Compressor, Other
+  - Vehicle category field appears when asset type is "vehicle" or "machinery"
+  - Categories can be edited in asset detail page
+
+- **Fuel Request System**: Complete fuel management for company vehicles
+  - **Fuel Request Page**: `/fuel-requests/new`
+    - Vehicle selection with vehicle category display
+    - Previous and current odometer readings
+    - Auto-calculated total KM (current - previous)
+    - Last filled date and current fill date tracking
+    - Amount in MVR
+    - Liters filled (optional)
+    - Fuel type selection (Petrol/Diesel/Other)
+    - Notes field for additional information
+  - **Fuel Requests List**: `/fuel-requests`
+    - View all fuel requests with status tracking
+    - Filter by status (pending, approved, completed, rejected)
+    - Search by vehicle name, code, or requester
+    - Statistics summary (total requests, amount, KM traveled)
+    - Approve/Reject/Complete actions for managers
+    - Odometer history tracking
+
+---
+
 ## [1.2.2] - 2026-03-31
 
 ### Fixed

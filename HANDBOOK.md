@@ -659,6 +659,22 @@ VITE_CLOUDINARY_UPLOAD_PRESET=your_upload_preset
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "fuel_requests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "vehicleId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fuel_requests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
     }
   ]
 }
@@ -672,6 +688,78 @@ Enable debug logging:
 // In browser console
 localStorage.setItem('debug', 'cmms:*');
 ```
+
+**Issue**: Fuel requests not loading properly
+**Solution**: Ensure Firestore indexes are created for fuel_requests collection (see Firestore Indexes section above)
+
+---
+
+## Vehicle Management
+
+### Vehicle Categories
+
+Assets with type "vehicle" or "machinery" can be assigned a vehicle category:
+
+| Category | Description |
+|----------|-------------|
+| sedan | Standard passenger car |
+| suv | Sport Utility Vehicle |
+| pickup | Light duty pickup truck |
+| truck | Heavy duty truck |
+| van | Passenger or cargo van |
+| bus | Passenger bus |
+| motorcycle | Two-wheeler vehicle |
+| forklift | Warehouse forklift |
+| excavator | Construction excavator |
+| bulldozer | Construction bulldozer |
+| crane | Mobile or tower crane |
+| generator | Mobile generator set |
+| compressor | Air compressor |
+| other | Other vehicle type |
+
+To change a vehicle's category:
+1. Go to Assets → Click on vehicle
+2. Click "Edit" button
+3. Select new category from "Vehicle Category" dropdown
+4. Save changes
+
+### Fuel Request System
+
+The fuel request system allows tracking of vehicle fuel consumption with odometer readings.
+
+#### Creating Fuel Requests
+
+Navigate to `/fuel-requests/new` to create a new request:
+
+1. **Select Vehicle** - Choose from registered vehicles/machinery
+2. **Odometer Readings**:
+   - Previous: Last recorded odometer reading
+   - Current: Current odometer reading
+   - Total KM: Auto-calculated (current - previous)
+3. **Dates**:
+   - Last Filled Date: When vehicle was last refueled
+   - Current Fill Date: Today's date (default)
+4. **Fuel Details**:
+   - Amount (MVR): Total cost
+   - Liters: Amount of fuel (optional)
+   - Fuel Type: Petrol/Diesel/Other
+5. **Notes**: Any additional information
+
+#### Fuel Request Workflow
+
+| Status | Description | Actions |
+|--------|-------------|---------|
+| pending | New request awaiting approval | Approve, Reject |
+| approved | Request approved by manager | Complete |
+| completed | Fuel has been filled | - |
+| rejected | Request denied | - |
+
+#### Fuel Request Statistics
+
+The list page (`/fuel-requests`) shows:
+- Total number of requests
+- Total amount spent (MVR)
+- Total KM traveled across all requests
 
 ---
 

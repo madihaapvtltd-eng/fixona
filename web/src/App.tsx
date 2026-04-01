@@ -35,6 +35,8 @@ import { BootstrapAdminPage } from '@/pages/admin/BootstrapAdminPage';
 import { AdminToolsPage } from '@/pages/admin/AdminToolsPage';
 import { TechnicianMobilePage } from '@/pages/technician/TechnicianMobilePage';
 import { AIDashboardPage } from '@/pages/ai/AIDashboardPage';
+import { FuelRequestsListPage } from '@/pages/fuel/FuelRequestsListPage';
+import { FuelRequestPage } from '@/pages/fuel/FuelRequestPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 const queryClient = new QueryClient();
@@ -136,6 +138,8 @@ function App() {
         <Route path="/assets" element={<AssetsPage />} />
         <Route path="/assets/new" element={<NewAssetPage />} />
         <Route path="/assets/:id" element={<AssetDetailPage />} />
+        <Route path="/fuel-requests" element={<FuelRequestsListPage />} />
+        <Route path="/fuel-requests/new" element={<FuelRequestPage />} />
         <Route path="/work-orders" element={<WorkOrdersPage />} />
         <Route path="/work-orders/:id" element={<WorkOrderDetailPage />} />
         <Route path="/work-orders/create" element={<CreateWorkOrderPage />} />

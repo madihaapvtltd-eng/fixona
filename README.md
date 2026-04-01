@@ -10,7 +10,7 @@ This Fixora CMMS system provides a complete solution for managing maintenance wo
 
 - **Multi-Role Support**: Super Admin, Admin, Supervisor, Technician, Purchasing, User
 - **Work Order Management**: Full lifecycle from creation to completion
-- **Asset Management**: Track assets with QR codes and maintenance history
+- **Vehicle Management**: Vehicle categories and fuel request system with odometer tracking
 - **Purchase Workflow**: Detailed multi-stage purchase approval process
 - **Real-time Notifications**: Instant updates for assignments and status changes
 - **Mobile Responsive**: Works on desktop, tablet, and mobile devices
