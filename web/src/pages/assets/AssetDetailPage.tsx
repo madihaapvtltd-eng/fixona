@@ -62,7 +62,7 @@ export function AssetDetailPage() {
   const handleSaveEdit = async () => {
     if (!id || !editForm) return;
     try {
-      await updateDoc(doc(db, 'assets', id), {
+      const updateData: any = {
         name: editForm.name,
         manufacturer: editForm.manufacturer,
         model: editForm.model,
@@ -70,9 +70,15 @@ export function AssetDetailPage() {
         type: editForm.type,
         vehicleCategory: editForm.vehicleCategory,
         status: editForm.status,
-        riskLevel: editForm.riskLevel,
         updatedAt: new Date(),
-      });
+      };
+      
+      // Only include riskLevel if it has a value
+      if (editForm.riskLevel !== undefined && editForm.riskLevel !== null && editForm.riskLevel !== '') {
+        updateData.riskLevel = editForm.riskLevel;
+      }
+      
+      await updateDoc(doc(db, 'assets', id), updateData);
       toast.success('Asset updated successfully');
       setEditing(false);
       refetch();
