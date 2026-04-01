@@ -52,6 +52,8 @@ export function FuelRequestPage() {
     amountMVR: 0,
     liters: 0,
     fuelType: 'petrol' as 'petrol' | 'diesel' | 'other',
+    previousPersonName: '',
+    newPersonName: '',
     notes: '',
   });
 
@@ -164,6 +166,8 @@ export function FuelRequestPage() {
         amountMVR: formData.amountMVR,
         liters: formData.liters,
         fuelType: formData.fuelType,
+        previousPersonName: formData.previousPersonName,
+        newPersonName: formData.newPersonName,
         requestedBy: user?.name || user?.email || 'Unknown',
         requestedById: user?.id || '',
         notes: formData.notes,
@@ -334,6 +338,38 @@ export function FuelRequestPage() {
                 className="input"
                 value={formData.currentDate}
                 onChange={(e) => setFormData({ ...formData, currentDate: e.target.value })}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Person Names Section */}
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Person Details
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="label">Previous Person Name</label>
+              <input
+                type="text"
+                className="input"
+                value={formData.previousPersonName}
+                onChange={(e) => setFormData({ ...formData, previousPersonName: e.target.value })}
+                placeholder="Who had the vehicle before?"
+              />
+            </div>
+
+            <div>
+              <label className="label">New Person Name</label>
+              <input
+                type="text"
+                className="input"
+                value={formData.newPersonName}
+                onChange={(e) => setFormData({ ...formData, newPersonName: e.target.value })}
+                placeholder="Who has the vehicle now?"
               />
             </div>
           </div>

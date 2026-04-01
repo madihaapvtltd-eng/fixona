@@ -22,6 +22,8 @@ interface FuelRequest {
   liters?: number;
   fuelType: 'petrol' | 'diesel' | 'other';
   requestedBy: string;
+  previousPersonName?: string;
+  newPersonName?: string;
   notes: string;
   status: 'pending' | 'approved' | 'rejected' | 'completed';
   createdAt: any;
@@ -273,6 +275,14 @@ export function FuelRequestsListPage() {
                     <User className="h-4 w-4" />
                     {req.requestedBy}
                   </div>
+                  {(req.previousPersonName || req.newPersonName) && (
+                    <div className="flex items-center gap-1">
+                      <User className="h-4 w-4" />
+                      {req.previousPersonName && <span>From: {req.previousPersonName}</span>}
+                      {req.previousPersonName && req.newPersonName && <span> → </span>}
+                      {req.newPersonName && <span>To: {req.newPersonName}</span>}
+                    </div>
+                  )}
                   <div className="flex items-center gap-1">
                     <span>Fill Date:</span>
                     <span className="font-medium">{format(new Date(req.currentDate), 'MMM d, yyyy')}</span>
