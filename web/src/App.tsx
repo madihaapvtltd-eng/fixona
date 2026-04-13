@@ -49,6 +49,7 @@ import { ColdRoomsPage } from '@/pages/coldrooms/ColdRoomsPage';
 import { ColdRoomDetailPage } from '@/pages/coldrooms/ColdRoomDetailPage';
 import { NewColdRoomPage } from '@/pages/coldrooms/NewColdRoomPage';
 import { TemperatureLogPage } from '@/pages/coldrooms/TemperatureLogPage';
+import { UserManualPage } from '@/pages/help/UserManualPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 const queryClient = new QueryClient();
@@ -169,6 +170,10 @@ function App() {
         <Route path="/cold-rooms/new" element={<NewColdRoomPage />} />
         <Route path="/cold-rooms/:id" element={<ColdRoomDetailPage />} />
         <Route path="/cold-rooms/temperature-log" element={<TemperatureLogPage />} />
+        
+        {/* Help & Documentation */}
+        <Route path="/help/user-manual" element={<UserManualPage />} />
+        
         <Route path="/work-orders" element={<WorkOrdersPage />} />
         <Route path="/work-orders/:id" element={<WorkOrderDetailPage />} />
         <Route path="/work-orders/create" element={<CreateWorkOrderPage />} />

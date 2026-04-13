@@ -32,6 +32,7 @@ import {
   Zap,
   Database,
   Snowflake,
+  Book,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -51,6 +52,7 @@ const navigation = [
   { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'Technician', href: '/technician', icon: Smartphone },
   { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'User Manual', href: '/help/user-manual', icon: Book },
 ];
 
 // Admin navigation - only for super admins

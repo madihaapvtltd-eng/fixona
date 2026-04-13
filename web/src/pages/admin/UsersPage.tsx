@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc, serverTimestamp, query, orderBy, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc, serverTimestamp, query, orderBy, where, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
 import { useAuthStore, type User as UserType, type Company, Permission, hasPermission } from '@/stores/authStore';
 import { Users, Plus, Search, Edit2, Trash2, Building2, Shield, UserCheck, UserX, Filter } from 'lucide-react';
 import { format } from 'date-fns';
@@ -75,8 +76,21 @@ export function UsersPage() {
   // Create user mutation
   const createMutation = useMutation(
     async (data: UserFormData) => {
+      // 1. Create Firebase Auth user
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        data.email,
+        data.password
+      );
+      const firebaseUser = userCredential.user;
+      
+      // 2. Update Firebase Auth profile
+      await updateProfile(firebaseUser, { displayName: data.name });
+      
+      // 3. Create user document in Firestore with Firebase UID
       const company = companies.find(c => c.id === data.companyId);
-      const docRef = await addDoc(collection(db, 'users'), {
+      await setDoc(doc(db, 'users', firebaseUser.uid), {
+        id: firebaseUser.uid,
         name: data.name,
         email: data.email,
         phone: data.phone,
@@ -86,17 +100,26 @@ export function UsersPage() {
         department: data.department,
         isActive: data.isActive,
         createdAt: serverTimestamp(),
-        // In production: Create Firebase Auth user with data.password
       });
-      return docRef.id;
+      
+      return firebaseUser.uid;
     },
     {
       onSuccess: () => {
         queryClient.invalidateQueries('users');
-        toast.success('User created successfully');
+        toast.success('User created successfully - they can now log in');
         closeModal();
       },
-      onError: () => toast.error('Failed to create user'),
+      onError: (error: any) => {
+        console.error('Error creating user:', error);
+        if (error.code === 'auth/email-already-in-use') {
+          toast.error('Email already registered');
+        } else if (error.code === 'auth/weak-password') {
+          toast.error('Password is too weak');
+        } else {
+          toast.error('Failed to create user: ' + error.message);
+        }
+      },
     }
   );
 
