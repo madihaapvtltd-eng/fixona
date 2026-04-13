@@ -33,6 +33,15 @@ import {
   Database,
   Snowflake,
   Book,
+  BedDouble,
+  Waves,
+  Droplets,
+  Calendar,
+  Anchor,
+  Utensils,
+  Car,
+  Shield,
+  Heart,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -51,6 +60,15 @@ const navigation = [
   { name: 'Staff', href: '/staff', icon: Users, feature: 'staff' },
   { name: 'Reports', href: '/reports', icon: FileText, feature: 'reports' },
   { name: 'Technician', href: '/technician', icon: Smartphone, feature: 'technician' },
+  { name: 'Housekeeping', href: '/housekeeping', icon: BedDouble, feature: 'housekeeping' },
+  { name: 'Pool & Spa', href: '/pool-spa', icon: Waves, feature: 'poolSpa' },
+  { name: 'Water & Energy', href: '/water-energy', icon: Droplets, feature: 'waterManagement' },
+  { name: 'Staff Scheduling', href: '/staff-scheduling', icon: Calendar, feature: 'staffScheduling' },
+  { name: 'Water Sports', href: '/water-sports', icon: Anchor, feature: 'waterSports' },
+  { name: 'Food & Beverage', href: '/food-beverage', icon: Utensils, feature: 'foodBeverage' },
+  { name: 'Fleet', href: '/fleet', icon: Car, feature: 'fleet' },
+  { name: 'Security', href: '/security', icon: Shield, feature: 'security' },
+  { name: 'Guest Experience', href: '/guest-experience', icon: Heart, feature: 'guestExperience' },
   { name: 'Settings', href: '/settings', icon: Settings, feature: null },
   { name: 'User Manual', href: '/help/user-manual', icon: Book, feature: null },
 ];

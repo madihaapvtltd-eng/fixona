@@ -50,6 +50,17 @@ import { ColdRoomDetailPage } from '@/pages/coldrooms/ColdRoomDetailPage';
 import { NewColdRoomPage } from '@/pages/coldrooms/NewColdRoomPage';
 import { TemperatureLogPage } from '@/pages/coldrooms/TemperatureLogPage';
 import { UserManualPage } from '@/pages/help/UserManualPage';
+import { HousekeepingPage } from '@/pages/housekeeping/HousekeepingPage';
+import { NewRoomPage } from '@/pages/housekeeping/NewRoomPage';
+import { RoomDetailPage } from '@/pages/housekeeping/RoomDetailPage';
+import { PoolSpaPage } from '@/pages/poolspa/PoolSpaPage';
+import { WaterEnergyPage } from '@/pages/waterenergy/WaterEnergyPage';
+import { StaffSchedulingPage } from '@/pages/staffscheduling/StaffSchedulingPage';
+import { WaterSportsPage } from '@/pages/watersports/WaterSportsPage';
+import { FoodBeveragePage } from '@/pages/foodbeverage/FoodBeveragePage';
+import { FleetPage } from '@/pages/fleet/FleetPage';
+import { SecurityPage } from '@/pages/security/SecurityPage';
+import { GuestExperiencePage } from '@/pages/guestexperience/GuestExperiencePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 const queryClient = new QueryClient();
@@ -173,6 +184,35 @@ function App() {
         
         {/* Help & Documentation */}
         <Route path="/help/user-manual" element={<UserManualPage />} />
+        
+        {/* Housekeeping Routes */}
+        <Route path="/housekeeping" element={<HousekeepingPage />} />
+        <Route path="/housekeeping/new" element={<NewRoomPage />} />
+        <Route path="/housekeeping/room/:id" element={<RoomDetailPage />} />
+        
+        {/* Pool & Spa Routes */}
+        <Route path="/pool-spa" element={<PoolSpaPage />} />
+        
+        {/* Water & Energy Routes */}
+        <Route path="/water-energy" element={<WaterEnergyPage />} />
+        
+        {/* Staff Scheduling Routes */}
+        <Route path="/staff-scheduling" element={<StaffSchedulingPage />} />
+        
+        {/* Water Sports Routes */}
+        <Route path="/water-sports" element={<WaterSportsPage />} />
+        
+        {/* Food & Beverage Routes */}
+        <Route path="/food-beverage" element={<FoodBeveragePage />} />
+        
+        {/* Fleet Routes */}
+        <Route path="/fleet" element={<FleetPage />} />
+        
+        {/* Security Routes */}
+        <Route path="/security" element={<SecurityPage />} />
+        
+        {/* Guest Experience Routes */}
+        <Route path="/guest-experience" element={<GuestExperiencePage />} />
         
         <Route path="/work-orders" element={<WorkOrdersPage />} />
         <Route path="/work-orders/:id" element={<WorkOrderDetailPage />} />

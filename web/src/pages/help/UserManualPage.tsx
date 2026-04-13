@@ -6,7 +6,8 @@ import {
   Building2, Users, Wrench, Thermometer, Zap, Snowflake,
   FileText, Package, Fuel, LayoutDashboard, CheckCircle,
   AlertTriangle, Smartphone, Settings, LogOut, Plus,
-  Edit2, Trash2, Filter, BarChart3, Bell
+  Edit2, Trash2, Filter, BarChart3, Bell,
+  BedDouble, Waves, Droplets, Calendar, Anchor, Utensils, Car, Heart
 } from 'lucide-react';
 
 interface ManualSection {
@@ -476,6 +477,520 @@ const manualSections: ManualSection[] = [
           'Maintenance History - past services',
           'Temperature Compliance - cold room logs',
           'Fuel Consumption - usage tracking'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'feature-toggles',
+    title: 'Feature Access Control',
+    icon: <Settings size={20} />,
+    requiredRole: ['super_admin'],
+    description: 'Control which features users can access',
+    features: [
+      {
+        title: 'Managing Feature Access',
+        description: 'Enable or disable features per user.',
+        steps: [
+          'Navigate to Admin > All Users',
+          'Click Edit on a user',
+          'Scroll to "Feature Access" section',
+          'Toggle switches ON/OFF for each feature',
+          'All features are ON by default',
+          'Save changes'
+        ],
+        tip: 'Super admins always have access to all features regardless of toggles.'
+      },
+      {
+        title: 'Available Features',
+        description: 'Features that can be controlled:',
+        steps: [
+          'Assets Management - Equipment and inventory',
+          'Generators - Power generation monitoring',
+          'Cold Rooms - Temperature tracking',
+          'Work Orders - Maintenance tasks',
+          'Housekeeping - Room management',
+          'Pool & Spa - Water quality monitoring',
+          'Water & Energy - Desalination and solar',
+          'Staff Scheduling - Shifts and time-off',
+          'Water Sports - Equipment rentals',
+          'Food & Beverage - Kitchen and outlets',
+          'Fleet - Vehicles and trips',
+          'Security - Incidents and patrols',
+          'Guest Experience - Requests and feedback'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'housekeeping',
+    title: 'Housekeeping & Rooms',
+    icon: <BedDouble size={20} />,
+    requiredRole: ['super_admin', 'company_admin', 'supervisor', 'staff'],
+    description: 'Manage room status, cleaning tasks, and inspections',
+    features: [
+      {
+        title: 'Room Management',
+        description: 'Track room status and assignments.',
+        steps: [
+          'View all rooms with status indicators',
+          'Statuses: Vacant Clean, Vacant Dirty, Occupied, DND, Maintenance',
+          'Quickly mark rooms as clean',
+          'Assign housekeepers to rooms',
+          'Track last cleaned timestamps'
+        ]
+      },
+      {
+        title: 'Cleaning Tasks',
+        description: 'Schedule and track cleaning activities.',
+        steps: [
+          'Create cleaning tasks for rooms',
+          'Assign to housekeepers',
+          'Track task status: pending, in-progress, completed, verified',
+          'Record items replenished',
+          'Report issues found during cleaning'
+        ]
+      },
+      {
+        title: 'Room Inspections',
+        description: 'Quality control inspections.',
+        steps: [
+          'Perform inspections after cleaning',
+          'Score cleanliness, maintenance, amenities',
+          'Use detailed checklist',
+          'Upload photos of issues',
+          'Mark room as clean or needs attention'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'poolspa',
+    title: 'Pool & Spa Management',
+    icon: <Waves size={20} />,
+    requiredRole: ['super_admin', 'company_admin', 'supervisor', 'technician', 'staff'],
+    description: 'Monitor water quality, chemical levels, and safety',
+    features: [
+      {
+        title: 'Water Testing',
+        description: 'Record chemical parameters.',
+        steps: [
+          'Test pH level (target: 7.2-7.8)',
+          'Test chlorine level (target: 1.0-3.0 ppm)',
+          'Check alkalinity (target: 80-120 ppm)',
+          'Record water temperature',
+          'Note water clarity and color',
+          'Record any chemicals added'
+        ],
+        tip: 'Tests should be performed at least twice daily for main pools.'
+      },
+      {
+        title: 'Water Quality Alerts',
+        description: 'Automatic alerts for out-of-range values.',
+        steps: [
+          'System alerts when pH is too high or low',
+          'Chlorine alerts for safety',
+          'View all active alerts',
+          'Take corrective action',
+          'Mark alerts as resolved'
+        ]
+      },
+      {
+        title: 'Pool Assets',
+        description: 'Manage pools, spas, and equipment.',
+        steps: [
+          'Track operational status',
+          'Record maintenance activities',
+          'Monitor filter systems',
+          'Schedule deep cleaning',
+          'Track safety equipment'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'waterenergy',
+    title: 'Water & Energy Management',
+    icon: <Droplets size={20} />,
+    requiredRole: ['super_admin', 'company_admin', 'supervisor', 'technician'],
+    description: 'Monitor water tanks, desalination, and solar power',
+    features: [
+      {
+        title: 'Water Tank Monitoring',
+        description: 'Track water storage levels.',
+        steps: [
+          'View current water levels in all tanks',
+          'See percentage full for each tank',
+          'Record manual readings',
+          'Set alert thresholds',
+          'Track water quality parameters'
+        ]
+      },
+      {
+        title: 'Desalination Units',
+        description: 'Monitor water production.',
+        steps: [
+          'Track daily production volume',
+          'Monitor TDS output quality',
+          'Record energy consumption',
+          'Schedule maintenance',
+          'View production trends'
+        ]
+      },
+      {
+        title: 'Solar Power',
+        description: 'Track renewable energy generation.',
+        steps: [
+          'Monitor current output',
+          'View daily energy generation',
+          'Track system efficiency',
+          'Monitor battery storage',
+          'Calculate CO2 savings'
+        ]
+      },
+      {
+        title: 'Alerts',
+        description: 'System alerts for issues.',
+        steps: [
+          'Low water level alerts',
+          'High temperature alerts',
+          'Equipment fault notifications',
+          'Maintenance due reminders'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'staffscheduling',
+    title: 'Staff Scheduling',
+    icon: <Calendar size={20} />,
+    requiredRole: ['super_admin', 'company_admin', 'supervisor', 'staff'],
+    description: 'Manage shifts, schedules, and time-off requests',
+    features: [
+      {
+        title: 'Shift Management',
+        description: 'Create and manage work shifts.',
+        steps: [
+          'Define shift patterns',
+          'Set start and end times',
+          'Assign departments',
+          'Configure break durations',
+          'Set shift colors for calendar'
+        ]
+      },
+      {
+        title: 'Weekly Schedule',
+        description: 'Plan staff schedules.',
+        steps: [
+          'View weekly calendar',
+          'Assign staff to shifts',
+          'Filter by department',
+          'Check staff availability',
+          'Copy schedules week to week'
+        ]
+      },
+      {
+        title: 'Time-Off Requests',
+        description: 'Manage leave requests.',
+        steps: [
+          'Staff submit requests',
+          'Supervisors approve/reject',
+          'Track annual leave balances',
+          'View pending requests',
+          'Check department coverage'
+        ]
+      },
+      {
+        title: 'Clock In/Out',
+        description: 'Track attendance.',
+        steps: [
+          'Staff clock in at start',
+          'Clock out at end',
+          'Record break times',
+          'Track overtime hours',
+          'View attendance reports'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'watersports',
+    title: 'Water Sports & Marine',
+    icon: <Anchor size={20} />,
+    requiredRole: ['super_admin', 'company_admin', 'supervisor', 'staff'],
+    description: 'Manage rentals, vessels, and marine equipment',
+    features: [
+      {
+        title: 'Equipment Rentals',
+        description: 'Track water sports equipment.',
+        steps: [
+          'View available equipment',
+          'Create rental for guest',
+          'Record guest details and room',
+          'Set expected return time',
+          'Charge fees if applicable',
+          'Mark as returned when complete'
+        ]
+      },
+      {
+        title: 'Marine Vessels',
+        description: 'Manage boats and watercraft.',
+        steps: [
+          'Track vessel status',
+          'Schedule trips',
+          'Record fuel usage',
+          'Monitor safety equipment',
+          'Track maintenance schedules'
+        ]
+      },
+      {
+        title: 'Trip Management',
+        description: 'Coordinate vessel trips.',
+        steps: [
+          'Schedule guest excursions',
+          'Assign captain and crew',
+          'Record passenger count',
+          'Track departure and return',
+          'Log fuel consumption'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'foodbeverage',
+    title: 'Food & Beverage',
+    icon: <Utensils size={20} />,
+    requiredRole: ['super_admin', 'company_admin', 'supervisor', 'staff'],
+    description: 'Kitchen assets, outlets, inventory, and daily logs',
+    features: [
+      {
+        title: 'Restaurant Outlets',
+        description: 'Manage F&B locations.',
+        steps: [
+          'Configure outlet details',
+          'Set operating hours',
+          'Track seating capacity',
+          'Assign managers and chefs',
+          'Monitor open/closed status'
+        ]
+      },
+      {
+        title: 'Kitchen Equipment',
+        description: 'Track kitchen assets.',
+        steps: [
+          'Monitor oven, grill, refrigerator status',
+          'Record temperatures for cold storage',
+          'Schedule maintenance',
+          'Track warranty information',
+          'Get alerts for temperature issues'
+        ]
+      },
+      {
+        title: 'Daily Logs',
+        description: 'Record daily operations.',
+        steps: [
+          'Log covers for each meal period',
+          'Record revenue breakdown',
+          'Note special events',
+          'Track complaints and compliments',
+          'Record temperature checks'
+        ]
+      },
+      {
+        title: 'Inventory',
+        description: 'F&B stock management.',
+        steps: [
+          'Track food and beverage stock',
+          'Monitor expiry dates',
+          'Set reorder points',
+          'Record stock transfers',
+          'Calculate inventory value'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'fleet',
+    title: 'Fleet & Transportation',
+    icon: <Car size={20} />,
+    requiredRole: ['super_admin', 'company_admin', 'supervisor', 'staff'],
+    description: 'Vehicle management, trips, fuel, and maintenance',
+    features: [
+      {
+        title: 'Vehicle Management',
+        description: 'Track all vehicles.',
+        steps: [
+          'View vehicle fleet',
+          'Check availability status',
+          'Monitor mileage',
+          'Track fuel type and efficiency',
+          'Manage assignments'
+        ]
+      },
+      {
+        title: 'Trip Management',
+        description: 'Coordinate vehicle usage.',
+        steps: [
+          'Create trip requests',
+          'Assign drivers',
+          'Record purpose and destination',
+          'Track passenger details',
+          'Complete trip with mileage'
+        ]
+      },
+      {
+        title: 'Fuel Tracking',
+        description: 'Monitor fuel consumption.',
+        steps: [
+          'Record fuel purchases',
+          'Track cost per liter',
+          'Calculate efficiency',
+          'View fuel reports',
+          'Identify anomalies'
+        ]
+      },
+      {
+        title: 'Maintenance',
+        description: 'Schedule vehicle service.',
+        steps: [
+          'Track service intervals',
+          'Record maintenance history',
+          'Set reminders for due service',
+          'Log repairs and costs',
+          'Monitor vehicle condition'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'security',
+    title: 'Security & Safety',
+    icon: <Shield size={20} />,
+    requiredRole: ['super_admin', 'company_admin', 'supervisor', 'staff'],
+    description: 'Incidents, patrols, keys, and safety equipment',
+    features: [
+      {
+        title: 'Incident Reporting',
+        description: 'Log security incidents.',
+        steps: [
+          'Create incident report',
+          'Classify by type and severity',
+          'Record location and time',
+          'Document description',
+          'Upload photos if needed',
+          'Assign for investigation'
+        ]
+      },
+      {
+        title: 'Security Patrols',
+        description: 'Manage guard tours.',
+        steps: [
+          'Schedule patrol routes',
+          'Define checkpoints',
+          'Record patrol completion',
+          'Note issues found',
+          'Generate patrol reports'
+        ]
+      },
+      {
+        title: 'Key Control',
+        description: 'Track key distribution.',
+        steps: [
+          'Register all keys',
+          'Issue keys to staff',
+          'Track key history',
+          'Record returns',
+          'Report lost keys'
+        ]
+      },
+      {
+        title: 'Safety Equipment',
+        description: 'Monitor safety systems.',
+        steps: [
+          'Track fire extinguishers',
+          'Monitor smoke detectors',
+          'Schedule inspections',
+          'Record test results',
+          'Get alerts for expired items'
+        ]
+      },
+      {
+        title: 'Emergency Contacts',
+        description: 'Quick access to emergency numbers.',
+        steps: [
+          'Store police, fire, medical contacts',
+          'Add hospital and ambulance numbers',
+          'Organize by priority',
+          'One-click calling',
+          'Keep contacts updated'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'guestexperience',
+    title: 'Guest Experience',
+    icon: <Heart size={20} />,
+    requiredRole: ['super_admin', 'company_admin', 'supervisor', 'staff'],
+    description: 'Requests, feedback, VIP guests, and lost & found',
+    features: [
+      {
+        title: 'Guest Requests',
+        description: 'Manage guest service requests.',
+        steps: [
+          'Receive guest requests',
+          'Categorize by type',
+          'Set priority level',
+          'Assign to department',
+          'Track completion status',
+          'Record guest feedback'
+        ]
+      },
+      {
+        title: 'Guest Feedback',
+        description: 'Collect and manage feedback.',
+        steps: [
+          'Record guest comments',
+          'Rate overall experience',
+          'Categorize complaints vs compliments',
+          'Assign follow-up actions',
+          'Track resolution status',
+          'Analyze trends'
+        ]
+      },
+      {
+        title: 'VIP Guest Management',
+        description: 'Special handling for VIP guests.',
+        steps: [
+          'Create VIP profiles',
+          'Record preferences',
+          'Track stay history',
+          'Set VIP level (Silver, Gold, Platinum, Diamond)',
+          'Alert staff of VIP arrivals',
+          'Manage special requests'
+        ]
+      },
+      {
+        title: 'Lost & Found',
+        description: 'Track lost items.',
+        steps: [
+          'Log found items',
+          'Take photos',
+          'Assign reference number',
+          'Store securely',
+          'Record claims',
+          'Verify ownership'
+        ]
+      },
+      {
+        title: 'Concierge Services',
+        description: 'Manage guest activities.',
+        steps: [
+          'List available services',
+          'Book excursions',
+          'Arrange dining reservations',
+          'Coordinate transportation',
+          'Track service delivery'
         ]
       }
     ]
