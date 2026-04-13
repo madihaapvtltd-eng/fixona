@@ -222,54 +222,71 @@ export const useAuthStore = create<AuthState>()(
 
   persist(
 
-    (set) => ({
-
+    (set, get) => ({
       user: null,
-
-      loading: false, // Start as false so app renders immediately
+      currentCompany: null,
+      companies: [],
+      loading: false,
 
       setUser: (user) => set({ user }),
-
+      setCurrentCompany: (company) => set({ currentCompany: company }),
+      setCompanies: (companies) => set({ companies }),
       setLoading: (loading) => set({ loading }),
 
       logout: () => {
-
-        set({ user: null });
-
+        set({ user: null, currentCompany: null });
         localStorage.removeItem('auth-storage');
-
       },
 
       clearStorage: () => {
-
-        set({ user: null, loading: false });
-
+        set({ user: null, currentCompany: null, loading: false });
         localStorage.removeItem('auth-storage');
-
         sessionStorage.clear();
-
-        // Clear all caches
-
         if ('caches' in window) {
-
           caches.keys().then((names) => {
-
             names.forEach((name) => caches.delete(name));
-
           });
-
         }
-
       },
 
+      hasPermission: (permission: Permission) => {
+        const state = get();
+        if (!state.user) return false;
+        const permissions = rolePermissions[state.user.role] || [];
+        return permissions.includes(permission);
+      },
+
+      isSuperAdmin: () => {
+        const state = get();
+        return state.user?.role === 'super_admin';
+      },
+
+      isCompanyAdmin: () => {
+        const state = get();
+        return state.user?.role === 'company_admin';
+      },
+
+      canManageCompany: (companyId: string) => {
+        const state = get();
+        if (!state.user) return false;
+        if (state.user.role === 'super_admin') return true;
+        return state.user.companyId === companyId;
+      },
+
+      getCompanyId: () => {
+        const state = get();
+        return state.currentCompany?.id || state.user?.companyId;
+      },
     }),
 
     {
-
       name: 'auth-storage',
-
-      partialize: (state) => ({ user: state.user, loading: false }), // Don't persist loading state
-
+      partialize: (state) => ({ 
+        user: state.user, 
+        currentCompany: state.currentCompany,
+        companies: state.companies,
+        loading: false 
+      }),
     }
 
   )

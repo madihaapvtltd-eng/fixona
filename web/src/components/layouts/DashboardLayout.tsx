@@ -29,6 +29,7 @@ import {
   Briefcase,
   RefreshCw,
   Fuel,
+  Zap,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -39,6 +40,7 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Projects', href: '/projects', icon: Briefcase },
   { name: 'Assets', href: '/assets', icon: Building2 },
+  { name: 'Generators', href: '/generators', icon: Zap },
   { name: 'Work Orders', href: '/work-orders', icon: Wrench },
   { name: 'Fuel Requests', href: '/fuel-requests', icon: Fuel },
   { name: 'Inventory', href: '/inventory', icon: Package },

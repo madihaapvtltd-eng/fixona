@@ -40,6 +40,10 @@ import { FuelRequestPage } from '@/pages/fuel/FuelRequestPage';
 import { SuperAdminLogin } from '@/pages/admin/SuperAdminLogin';
 import { CompaniesPage } from '@/pages/admin/CompaniesPage';
 import { UsersPage } from '@/pages/admin/UsersPage';
+import { GeneratorsPage } from '@/pages/generators/GeneratorsPage';
+import { GeneratorDetailPage } from '@/pages/generators/GeneratorDetailPage';
+import { NewGeneratorPage } from '@/pages/generators/NewGeneratorPage';
+import { GeneratorMaintenancePage } from '@/pages/generators/GeneratorMaintenancePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 const queryClient = new QueryClient();
@@ -150,7 +154,11 @@ function App() {
         <Route path="/assets/new" element={<NewAssetPage />} />
         <Route path="/assets/:id" element={<AssetDetailPage />} />
         <Route path="/fuel-requests" element={<FuelRequestsListPage />} />
-        <Route path="/fuel-requests/new" element={<FuelRequestPage />} />
+        <Route path="/fuel-requests/:id" element={<FuelRequestPage />} />
+        <Route path="/generators" element={<GeneratorsPage />} />
+        <Route path="/generators/new" element={<NewGeneratorPage />} />
+        <Route path="/generators/:id" element={<GeneratorDetailPage />} />
+        <Route path="/generators/:id/maintenance" element={<GeneratorMaintenancePage />} />
         <Route path="/work-orders" element={<WorkOrdersPage />} />
         <Route path="/work-orders/:id" element={<WorkOrderDetailPage />} />
         <Route path="/work-orders/create" element={<CreateWorkOrderPage />} />
