@@ -31,6 +31,7 @@ import {
   Fuel,
   Zap,
   Database,
+  Snowflake,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -42,6 +43,7 @@ const navigation = [
   { name: 'Projects', href: '/projects', icon: Briefcase },
   { name: 'Assets', href: '/assets', icon: Building2 },
   { name: 'Generators', href: '/generators', icon: Zap },
+  { name: 'Cold Rooms', href: '/cold-rooms', icon: Snowflake },
   { name: 'Work Orders', href: '/work-orders', icon: Wrench },
   { name: 'Fuel Requests', href: '/fuel-requests', icon: Fuel },
   { name: 'Inventory', href: '/inventory', icon: Package },

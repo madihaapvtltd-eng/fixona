@@ -45,6 +45,10 @@ import { GeneratorsPage } from '@/pages/generators/GeneratorsPage';
 import { GeneratorDetailPage } from '@/pages/generators/GeneratorDetailPage';
 import { NewGeneratorPage } from '@/pages/generators/NewGeneratorPage';
 import { GeneratorMaintenancePage } from '@/pages/generators/GeneratorMaintenancePage';
+import { ColdRoomsPage } from '@/pages/coldrooms/ColdRoomsPage';
+import { ColdRoomDetailPage } from '@/pages/coldrooms/ColdRoomDetailPage';
+import { NewColdRoomPage } from '@/pages/coldrooms/NewColdRoomPage';
+import { TemperatureLogPage } from '@/pages/coldrooms/TemperatureLogPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 const queryClient = new QueryClient();
@@ -161,6 +165,10 @@ function App() {
         <Route path="/generators/new" element={<NewGeneratorPage />} />
         <Route path="/generators/:id" element={<GeneratorDetailPage />} />
         <Route path="/generators/:id/maintenance" element={<GeneratorMaintenancePage />} />
+        <Route path="/cold-rooms" element={<ColdRoomsPage />} />
+        <Route path="/cold-rooms/new" element={<NewColdRoomPage />} />
+        <Route path="/cold-rooms/:id" element={<ColdRoomDetailPage />} />
+        <Route path="/cold-rooms/temperature-log" element={<TemperatureLogPage />} />
         <Route path="/work-orders" element={<WorkOrdersPage />} />
         <Route path="/work-orders/:id" element={<WorkOrderDetailPage />} />
         <Route path="/work-orders/create" element={<CreateWorkOrderPage />} />
