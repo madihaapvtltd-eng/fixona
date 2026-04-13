@@ -46,7 +46,166 @@ export function FuelRequestsListPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [updating, setUpdating] = useState<string | null>(null);
-  const [printRequest, setPrintRequest] = useState<FuelRequest | null>(null);
+
+  const handlePrintSlip = (req: FuelRequest) => {
+    const printWindow = window.open('', '_blank', 'noopener,noreferrer');
+    if (!printWindow) {
+      toast.error('Popup blocked. Please allow popups to print.');
+      return;
+    }
+
+    const safe = (value: unknown) => {
+      if (value === undefined || value === null) return '';
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    };
+
+    const money = (value: unknown) => {
+      const num = typeof value === 'number' ? value : Number(value);
+      if (Number.isFinite(num)) return `MVR ${num.toLocaleString()}`;
+      return 'MVR 0';
+    };
+
+    const dateLabel = (value: string) => {
+      if (!value) return '';
+      const dt = new Date(value);
+      if (Number.isNaN(dt.getTime())) return safe(value);
+      return format(dt, 'MMM d, yyyy');
+    };
+
+    const html = `
+      <html>
+        <head>
+          <title>Fuel Slip - ${safe(req.vehicleCode)}</title>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <style>
+            * { box-sizing: border-box; }
+            body { margin: 0; font-family: Arial, sans-serif; color: #111827; }
+            .page { padding: 24px; }
+            .slip { max-width: 520px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; }
+            .title { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+            .title h1 { margin: 0; font-size: 18px; }
+            .muted { color: #6b7280; font-size: 12px; }
+            .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; background: #f3f4f6; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+            .row { border-top: 1px dashed #e5e7eb; margin-top: 16px; padding-top: 16px; }
+            .kv { padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; }
+            .k { font-size: 11px; color: #6b7280; margin-bottom: 4px; }
+            .v { font-size: 14px; font-weight: 600; word-break: break-word; }
+            .v.normal { font-weight: 500; }
+            .big { font-size: 18px; }
+            .actions { margin-top: 16px; display: flex; justify-content: center; }
+            button { padding: 10px 16px; border-radius: 10px; border: 1px solid #e5e7eb; background: #111827; color: white; cursor: pointer; }
+            @media print {
+              .actions { display: none; }
+              body { margin: 0; }
+              .page { padding: 0; }
+              .slip { border: none; border-radius: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="page">
+            <div class="slip">
+              <div class="title">
+                <div>
+                  <h1>Fuel Request Slip</h1>
+                  <div class="muted">Printed: ${safe(format(new Date(), 'MMM d, yyyy p'))}</div>
+                </div>
+                <div class="badge">${safe(req.status?.toUpperCase?.() ? req.status.toUpperCase() : req.status)}</div>
+              </div>
+
+              <div class="grid">
+                <div class="kv">
+                  <div class="k">Vehicle</div>
+                  <div class="v">${safe(req.vehicleName)}</div>
+                  <div class="muted">${safe(req.vehicleCode)}${req.vehicleCategory ? ` • ${safe(req.vehicleCategory)}` : ''}</div>
+                </div>
+                <div class="kv">
+                  <div class="k">Fuel Type</div>
+                  <div class="v">${safe(req.fuelType)}</div>
+                  <div class="muted">${req.liters ? `${safe(req.liters)} L` : ''}</div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="grid">
+                  <div class="kv">
+                    <div class="k">Previous Odometer</div>
+                    <div class="v big">${safe(req.previousOdometer?.toLocaleString?.() ? req.previousOdometer.toLocaleString() : req.previousOdometer)} km</div>
+                  </div>
+                  <div class="kv">
+                    <div class="k">Current Odometer</div>
+                    <div class="v big">${safe(req.currentOdometer?.toLocaleString?.() ? req.currentOdometer.toLocaleString() : req.currentOdometer)} km</div>
+                  </div>
+                  <div class="kv" style="grid-column: 1 / -1;">
+                    <div class="k">Total KM</div>
+                    <div class="v big">+${safe(req.totalKm?.toLocaleString?.() ? req.totalKm.toLocaleString() : req.totalKm)} km</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="grid">
+                  <div class="kv">
+                    <div class="k">Last Filled Date</div>
+                    <div class="v normal">${safe(dateLabel(req.lastFilledDate))}</div>
+                  </div>
+                  <div class="kv">
+                    <div class="k">Current Fill Date</div>
+                    <div class="v normal">${safe(dateLabel(req.currentDate))}</div>
+                  </div>
+                  <div class="kv" style="grid-column: 1 / -1;">
+                    <div class="k">Amount</div>
+                    <div class="v big">${safe(money(req.amountMVR))}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="grid">
+                  <div class="kv">
+                    <div class="k">Requested By</div>
+                    <div class="v normal">${safe(req.requestedBy)}</div>
+                  </div>
+                  <div class="kv">
+                    <div class="k">Person Transfer</div>
+                    <div class="v normal">${safe(req.previousPersonName || '')}${req.previousPersonName && req.newPersonName ? ' → ' : ''}${safe(req.newPersonName || '')}</div>
+                  </div>
+                </div>
+              </div>
+
+              ${req.notes ? `
+                <div class="row">
+                  <div class="kv">
+                    <div class="k">Notes</div>
+                    <div class="v normal">${safe(req.notes)}</div>
+                  </div>
+                </div>
+              ` : ''}
+
+              <div class="actions">
+                <button onclick="window.print()">Print</button>
+              </div>
+            </div>
+          </div>
+
+          <script>
+            setTimeout(() => { try { window.print(); } catch(e) {} }, 250);
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
 
   const { data: requests, isLoading, refetch } = useQuery('fuelRequests', async () => {
     const q = query(collection(db, 'fuel_requests'), orderBy('createdAt', 'desc'));
@@ -236,6 +395,14 @@ export function FuelRequestsListPage() {
                       <StatusIcon className="h-3 w-3" />
                       {status.label}
                     </span>
+
+                    <button
+                      onClick={() => handlePrintSlip(req)}
+                      className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
+                      title="Print Slip"
+                    >
+                      <Printer className="h-4 w-4" />
+                    </button>
                     
                     {req.status === 'pending' && (
                       <div className="flex gap-2">
@@ -265,16 +432,6 @@ export function FuelRequestsListPage() {
                         className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"
                       >
                         Complete
-                      </button>
-                    )}
-                    
-                    {req.status === 'completed' && (
-                      <button
-                        onClick={() => setPrintRequest(req)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                        title="Print Fuel Slip"
-                      >
-                        <Printer className="h-4 w-4" />
                       </button>
                     )}
                   </div>
@@ -313,187 +470,6 @@ export function FuelRequestsListPage() {
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* Print Preview Modal */}
-      {printRequest && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Print Preview Header */}
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-semibold">Fuel Slip Preview</h2>
-              <button
-                onClick={() => setPrintRequest(null)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <XCircle className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Printable Content */}
-            <div id="fuel-slip-print" className="p-6">
-              <div className="border-2 border-gray-800 p-6 rounded-lg">
-                {/* Header */}
-                <div className="text-center border-b-2 border-gray-800 pb-4 mb-4">
-                  <h1 className="text-2xl font-bold text-gray-900">FUEL SLIP</h1>
-                  <p className="text-sm text-gray-600">Official Fuel Request Receipt</p>
-                </div>
-
-                {/* Slip Info */}
-                <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Slip No:</span>
-                    <span className="font-mono font-bold ml-2">{printRequest.id.slice(-6).toUpperCase()}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-gray-600">Date:</span>
-                    <span className="font-bold ml-2">{format(new Date(printRequest.currentDate), 'MMM d, yyyy')}</span>
-                  </div>
-                </div>
-
-                {/* Vehicle Info */}
-                <div className="border-t border-gray-300 pt-4 mb-4">
-                  <h3 className="font-bold text-gray-900 mb-2">Vehicle Information</h3>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <span className="text-gray-600">Vehicle:</span>
-                      <span className="font-bold ml-2">{printRequest.vehicleName}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Code:</span>
-                      <span className="font-mono ml-2">{printRequest.vehicleCode}</span>
-                    </div>
-                    {printRequest.vehicleCategory && (
-                      <div>
-                        <span className="text-gray-600">Category:</span>
-                        <span className="capitalize ml-2">{printRequest.vehicleCategory}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Odometer Info */}
-                <div className="border-t border-gray-300 pt-4 mb-4">
-                  <h3 className="font-bold text-gray-900 mb-2">Odometer Reading</h3>
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div className="bg-gray-100 p-2 rounded">
-                      <p className="text-xs text-gray-600">Previous</p>
-                      <p className="font-bold">{printRequest.previousOdometer?.toLocaleString()} km</p>
-                    </div>
-                    <div className="bg-gray-100 p-2 rounded">
-                      <p className="text-xs text-gray-600">Current</p>
-                      <p className="font-bold">{printRequest.currentOdometer?.toLocaleString()} km</p>
-                    </div>
-                    <div className="bg-green-100 p-2 rounded">
-                      <p className="text-xs text-green-700">Total KM</p>
-                      <p className="font-bold text-green-700">+{printRequest.totalKm?.toLocaleString()} km</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Fuel Info */}
-                <div className="border-t border-gray-300 pt-4 mb-4">
-                  <h3 className="font-bold text-gray-900 mb-2">Fuel Details</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-blue-50 p-3 rounded text-center">
-                      <p className="text-sm text-gray-600">Fuel Type</p>
-                      <p className="font-bold text-blue-700 uppercase">{printRequest.fuelType}</p>
-                    </div>
-                    {printRequest.liters && (
-                      <div className="bg-amber-50 p-3 rounded text-center">
-                        <p className="text-sm text-gray-600">Liters</p>
-                        <p className="font-bold text-amber-700">{printRequest.liters} L</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Amount */}
-                <div className="border-t-2 border-gray-800 pt-4 mb-4">
-                  <div className="flex items-center justify-between bg-gray-100 p-4 rounded">
-                    <span className="text-lg font-bold text-gray-900">Total Amount:</span>
-                    <span className="text-2xl font-bold text-gray-900">MVR {printRequest.amountMVR?.toLocaleString()}</span>
-                  </div>
-                </div>
-
-                {/* Person Details */}
-                {(printRequest.previousPersonName || printRequest.newPersonName) && (
-                  <div className="border-t border-gray-300 pt-4 mb-4">
-                    <h3 className="font-bold text-gray-900 mb-2">Person Details</h3>
-                    <div className="text-sm">
-                      {printRequest.previousPersonName && (
-                        <p><span className="text-gray-600">Previous Person:</span> <span className="font-bold">{printRequest.previousPersonName}</span></p>
-                      )}
-                      {printRequest.newPersonName && (
-                        <p><span className="text-gray-600">Current Person:</span> <span className="font-bold">{printRequest.newPersonName}</span></p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Notes */}
-                {printRequest.notes && (
-                  <div className="border-t border-gray-300 pt-4 mb-4">
-                    <h3 className="font-bold text-gray-900 mb-2">Notes</h3>
-                    <p className="text-sm text-gray-700 italic">{printRequest.notes}</p>
-                  </div>
-                )}
-
-                {/* Signature Section */}
-                <div className="border-t-2 border-gray-800 pt-6 mt-6">
-                  <div className="grid grid-cols-2 gap-8">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-8">Requested By:</p>
-                      <div className="border-t border-gray-400 pt-2">
-                        <p className="font-bold">{printRequest.requestedBy}</p>
-                        <p className="text-xs text-gray-500">Signature</p>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 mb-8">Approved By:</p>
-                      <div className="border-t border-gray-400 pt-2">
-                        <p className="font-bold">_________________</p>
-                        <p className="text-xs text-gray-500">Signature</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className="text-center mt-6 pt-4 border-t border-gray-300">
-                  <p className="text-xs text-gray-500">This is an official fuel slip. Please keep for your records.</p>
-                  <p className="text-xs text-gray-400 mt-1">Generated on {format(new Date(), 'MMM d, yyyy h:mm a')}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Print Actions */}
-            <div className="flex items-center justify-end gap-3 p-4 border-t bg-gray-50">
-              <button
-                onClick={() => setPrintRequest(null)}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  const printContent = document.getElementById('fuel-slip-print');
-                  if (printContent) {
-                    const originalContents = document.body.innerHTML;
-                    document.body.innerHTML = printContent.innerHTML;
-                    window.print();
-                    document.body.innerHTML = originalContents;
-                    window.location.reload();
-                  }
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-              >
-                <Printer className="h-4 w-4" />
-                Print
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>
