@@ -1,6 +1,7 @@
 import { ReactNode, useState, useEffect, useRef } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
+import { CompanySelector } from '@/components/CompanySelector';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import toast from 'react-hot-toast';
@@ -47,13 +48,20 @@ const navigation = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
+// Admin navigation - only for super admins
+const adminNavigation = [
+  { name: 'Companies', href: '/admin/companies', icon: Building2 },
+  { name: 'All Users', href: '/admin/users', icon: Users },
+];
+
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user, logout, isSuperAdmin } = useAuthStore();
+  const superAdmin = isSuperAdmin();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useRealtimeNotifications();
 
   // Close notifications when clicking outside
@@ -123,6 +131,40 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       </Link>
                     );
                   })}
+                  
+                  {/* Admin Section - Mobile - Only for Super Admin */}
+                  {superAdmin && (
+                    <>
+                      <div className="pt-4 pb-2">
+                        <p className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                          Super Admin
+                        </p>
+                      </div>
+                      {adminNavigation.map((item) => {
+                        const isActive = location.pathname === item.href ||
+                          location.pathname.startsWith(item.href + '/');
+                        return (
+                          <Link
+                            key={item.name}
+                            to={item.href}
+                            onClick={() => setSidebarOpen(false)}
+                            className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${
+                              isActive
+                                ? 'bg-purple-100 text-purple-900'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            }`}
+                          >
+                            <item.icon
+                              className={`mr-4 flex-shrink-0 h-6 w-6 ${
+                                isActive ? 'text-purple-600' : 'text-gray-400 group-hover:text-gray-500'
+                              }`}
+                            />
+                            {item.name}
+                          </Link>
+                        );
+                      })}
+                    </>
+                  )}
                 </nav>
               </div>
             </div>
@@ -140,7 +182,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </Link>
           </div>
           <div className="flex-1 flex flex-col overflow-y-auto">
-            <nav className="flex-1 px-2 py-4 space-y-1">
+            <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
               {navigation.map((item) => {
                 const isActive = location.pathname === item.href ||
                   location.pathname.startsWith(item.href + '/');
@@ -163,6 +205,39 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   </Link>
                 );
               })}
+              
+              {/* Admin Section - Only for Super Admin */}
+              {superAdmin && (
+                <>
+                  <div className="pt-4 pb-2">
+                    <p className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      Super Admin
+                    </p>
+                  </div>
+                  {adminNavigation.map((item) => {
+                    const isActive = location.pathname === item.href ||
+                      location.pathname.startsWith(item.href + '/');
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+                          isActive
+                            ? 'bg-purple-100 text-purple-900'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
+                      >
+                        <item.icon
+                          className={`mr-3 flex-shrink-0 h-5 w-5 ${
+                            isActive ? 'text-purple-600' : 'text-gray-400 group-hover:text-gray-500'
+                          }`}
+                        />
+                        {item.name}
+                      </Link>
+                    );
+                  })}
+                </>
+              )}
             </nav>
           </div>
         </div>
