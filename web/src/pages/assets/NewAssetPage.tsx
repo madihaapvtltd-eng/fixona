@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { collection, addDoc, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuthStore } from '@/stores/authStore';
+import { useCompany } from '@/hooks/useCompany';
 import { ALL_LOCATIONS } from '@/lib/locations';
 import { DEPARTMENTS } from '@/lib/departments';
 import toast from 'react-hot-toast';
@@ -16,6 +17,7 @@ import JsBarcode from 'jsbarcode';
 export function NewAssetPage() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+  const { companyId, companyName, hasCompanyAccess } = useCompany();
   const [loading, setLoading] = useState(false);
   const [generatingCode, setGeneratingCode] = useState(false);
   const [showBarcode, setShowBarcode] = useState(false);
@@ -179,9 +181,18 @@ export function NewAssetPage() {
         const svgData = new XMLSerializer().serializeToString(barcodeRef.current);
         barcodeDataUrl = 'data:image/svg+xml;base64,' + btoa(svgData);
       }
+      // Check if user has company access
+      if (!hasCompanyAccess) {
+        toast.error('You must be assigned to a company to create assets');
+        setLoading(false);
+        return;
+      }
+
       await addDoc(collection(db, 'assets'), {
         ...formData,
         barcodeSvg: barcodeDataUrl,
+        companyId: companyId,
+        companyName: companyName,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         createdBy: user?.id || 'unknown',

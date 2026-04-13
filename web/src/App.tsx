@@ -37,6 +37,9 @@ import { TechnicianMobilePage } from '@/pages/technician/TechnicianMobilePage';
 import { AIDashboardPage } from '@/pages/ai/AIDashboardPage';
 import { FuelRequestsListPage } from '@/pages/fuel/FuelRequestsListPage';
 import { FuelRequestPage } from '@/pages/fuel/FuelRequestPage';
+import { SuperAdminLogin } from '@/pages/admin/SuperAdminLogin';
+import { CompaniesPage } from '@/pages/admin/CompaniesPage';
+import { UsersPage } from '@/pages/admin/UsersPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 const queryClient = new QueryClient();
@@ -70,6 +73,7 @@ function App() {
             id: firebaseUser.uid,
             email: firebaseUser.email!,
             role: userData?.role || 'staff',
+            isActive: userData?.isActive ?? true,
             ...userData,
             name: cleanName,
           });
@@ -126,6 +130,13 @@ function App() {
       <Route element={<AuthLayout />}>
         <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage />} />
         <Route path="/register" element={user ? <Navigate to="/" /> : <RegisterPage />} />
+        <Route path="/superadmin" element={<SuperAdminLogin />} />
+      </Route>
+
+      {/* Super Admin Routes */}
+      <Route element={user?.role === 'super_admin' ? <DashboardLayout /> : <Navigate to="/superadmin" />}>
+        <Route path="/admin/companies" element={<CompaniesPage />} />
+        <Route path="/admin/users" element={<UsersPage />} />
       </Route>
 
       {/* Protected Routes */}

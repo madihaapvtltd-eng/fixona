@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
-import { collection, getDocs, query, orderBy, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, where, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Plus, Search, QrCode, X, MapPin, Wrench, FileText, Tag, DollarSign, User } from 'lucide-react';
+import { useAuthStore } from '@/stores/authStore';
+import { Plus, Search, QrCode, X, MapPin, Wrench, FileText, Tag, DollarSign, User, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import Barcode from 'react-barcode';
 
@@ -15,6 +16,8 @@ interface Asset {
   status: string;
   condition: string;
   riskLevel: string;
+  companyId?: string;
+  companyName?: string;
   description?: string;
   location?: string;
   purchaseDate?: string;
@@ -33,11 +36,29 @@ export function AssetsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const { user, getCompanyId, isSuperAdmin } = useAuthStore();
+  const companyId = getCompanyId();
 
-  const { data: assets, isLoading } = useQuery('assets', async () => {
-    const q = query(collection(db, 'assets'), orderBy('createdAt', 'desc'));
+  const { data: assets, isLoading } = useQuery(['assets', companyId], async () => {
+    let q;
+    if (isSuperAdmin() && !companyId) {
+      // Super admin without company filter sees all
+      q = query(collection(db, 'assets'), orderBy('createdAt', 'desc'));
+    } else if (companyId) {
+      // Filter by company
+      q = query(
+        collection(db, 'assets'), 
+        where('companyId', '==', companyId),
+        orderBy('createdAt', 'desc')
+      );
+    } else {
+      // No company assigned - return empty
+      return [] as Asset[];
+    }
     const snap = await getDocs(q);
     return snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => ({ id: d.id, ...d.data() })) as Asset[];
+  }, {
+    enabled: !!user && (!!companyId || isSuperAdmin()),
   });
 
   const filteredAssets = assets?.filter((asset) => {
