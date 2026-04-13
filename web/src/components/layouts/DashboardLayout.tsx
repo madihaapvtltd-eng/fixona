@@ -30,6 +30,7 @@ import {
   RefreshCw,
   Fuel,
   Zap,
+  Database,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -54,6 +55,7 @@ const navigation = [
 const adminNavigation = [
   { name: 'Companies', href: '/admin/companies', icon: Building2 },
   { name: 'All Users', href: '/admin/users', icon: Users },
+  { name: 'Data Migration', href: '/admin/migrate', icon: Database },
 ];
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {

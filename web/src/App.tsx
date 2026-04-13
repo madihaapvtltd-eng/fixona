@@ -40,6 +40,7 @@ import { FuelRequestPage } from '@/pages/fuel/FuelRequestPage';
 import { SuperAdminLogin } from '@/pages/admin/SuperAdminLogin';
 import { CompaniesPage } from '@/pages/admin/CompaniesPage';
 import { UsersPage } from '@/pages/admin/UsersPage';
+import { DataMigrationPage } from '@/pages/admin/DataMigrationPage';
 import { GeneratorsPage } from '@/pages/generators/GeneratorsPage';
 import { GeneratorDetailPage } from '@/pages/generators/GeneratorDetailPage';
 import { NewGeneratorPage } from '@/pages/generators/NewGeneratorPage';
@@ -141,6 +142,7 @@ function App() {
       <Route element={user?.role === 'super_admin' ? <DashboardLayout /> : <Navigate to="/superadmin" />}>
         <Route path="/admin/companies" element={<CompaniesPage />} />
         <Route path="/admin/users" element={<UsersPage />} />
+        <Route path="/admin/migrate" element={<DataMigrationPage />} />
       </Route>
 
       {/* Protected Routes */}
