@@ -1,12 +1,13 @@
 # Fixora Setup Guide
 
-Complete setup instructions for Fixora.
+Complete setup instructions for Fixora - Multi-Tenant CMMS System.
 
 ## Prerequisites
 
 - Node.js 18+
 - npm or yarn
 - Git
+- Firebase account (free tier)
 
 ---
 
@@ -196,34 +197,89 @@ npm run deploy:rules
 
 ---
 
-## 8. Initial Setup (First Admin User)
+## 8. Initial Setup (Super Admin & First Company)
 
-1. Create first admin user via web app
-2. Run seed data script:
+### 8.1 Super Admin Setup
+
+The super admin login is configured in the application code. To set your super admin credentials:
+
+1. Edit `web/src/pages/admin/SuperAdminLogin.tsx`
+2. Update the credentials check:
+```typescript
+if (email === 'your-email@domain.com' && password === 'your-password') {
+```
+3. Or use environment variables for production
+
+**Default Super Admin Portal:**
+- URL: `/superadmin/login`
+- Credentials: As configured in step above
+
+### 8.2 Create First Company
+
+1. Login as Super Admin at `/superadmin/login`
+2. Go to **Companies** page
+3. Click **"Add Company"**
+4. Fill company details:
+   - Company Name (e.g., "Acme Corp")
+   - Company Code (e.g., "ACME")
+   - Address and contact info
+   - Status: Active
+5. Click **Create**
+
+### 8.3 Create Company Admin
+
+1. Go to **Users** page
+2. Click **"Add User"**
+3. Fill user details:
+   - Email, name, phone
+   - Select the company you just created
+   - Role: Company Admin
+   - Status: Active
+4. Click **Create**
+5. Note the user credentials for company admin login
+
+### 8.4 Run Seed Data (Optional)
+
 ```bash
 cd firebase
 npm run seed
 ```
 
-This creates:
-- Sample assets
+This creates sample data for testing:
+- Sample assets (tagged with company)
 - Sample inventory items
 - Sample maintenance logs
-- Demo technicians
+- Demo users per company
 
 ---
 
-## 9. Testing Locally
+## 9. Testing Multi-Tenant Setup
+
+### Test Company Isolation:
+1. **Login as Super Admin** at `/superadmin/login`
+2. **Create Company A**:
+   - Company Name: "Test Company A"
+   - Code: "TCA"
+3. **Create Company Admin A** assigned to Company A
+4. **Create Company B**:
+   - Company Name: "Test Company B"
+   - Code: "TCB"
+5. **Create Company Admin B** assigned to Company B
+6. **Login as Company Admin A** at regular `/login`
+7. **Create assets** - they will be tagged with Company A
+8. **Login as Company Admin B** at `/login`
+9. **Verify**: Assets from Company A are NOT visible
+10. **Login as Super Admin** and use Company Selector to switch between companies
 
 ### Test Work Flow:
-1. Login as Admin
-2. Create an asset
+1. Login as Company Admin
+2. Create an asset (automatically tagged with company)
 3. Set maintenance due date to today
 4. System auto-generates work order
-5. Assign to technician
+5. Assign to technician (same company only)
 6. Login as Technician on mobile
 7. Accept and complete task
-8. Verify inventory deduction
+8. Verify company context maintained throughout
 
 ### Test WhatsApp (Mock):
 Check Firebase Functions logs:
@@ -253,20 +309,104 @@ npm run emulators
 ### CORS Issues:
 Update `firebase/firebase.json` cors settings or use emulator.
 
+### Company Data Not Isolated:
+- Verify users have `companyId` field in Firestore
+- Check that assets are created with `companyId` and `companyName`
+- Ensure super admin has proper credentials
+- Check Firestore security rules include company filtering
+
+### User Can't See Company Data:
+- Verify user is assigned to a company
+- Check user `isActive` status is true
+- Confirm user role permissions in authStore
+- Try logging out and back in
+
+### Super Admin Can't Access Companies:
+- Verify you're accessing `/superadmin/login` (not regular login)
+- Check credentials match configuration in code
+- Ensure `role` is set to `'super_admin'` in user object
+
+### Company Selector Not Showing:
+- Only appears for super admin users
+- Requires at least 2 active companies in the system
+- Check that companies have `isActive: true`
+
 ---
 
 ## Free Tier Limits
 
-| Service | Free Tier |
-|---------|-----------|
-| Firebase Auth | 10,000 users/month |
-| Firestore | 50K reads/day, 20K writes/day |
-| Cloud Functions | 2M invocations/month |
-| Cloudinary | 25 credits/month |
-| WhatsApp API | 1K conversations/month |
-| Vercel | Hobby tier (free) |
+| Service | Free Tier | Multi-Tenant Notes |
+|---------|-----------|-------------------|
+| Firebase Auth | 10,000 users/month | Shared across all companies |
+| Firestore | 50K reads/day, 20K writes/day | Per company isolation via queries |
+| Cloud Functions | 2M invocations/month | All companies share pool |
+| Cloudinary | 25 credits/month | All companies share credits |
+| WhatsApp API | 1K conversations/month | Per instance, not per company |
+| Vercel | Hobby tier (free) | Single deployment serves all |
+
+**Multi-Tenant Scaling:**
+- Each company adds to your total user/asset counts
+- Plan for 10-20% overhead for super admin cross-company operations
+- Consider Firebase Blaze plan for >5 active companies
+- Firestore indexes required for company-based queries
 
 ---
+
+## Multi-Tenant Architecture
+
+### Data Model
+
+**Company Collection:**
+```
+companies/{companyId}
+- name: string
+- code: string
+- address: object
+- isActive: boolean
+- createdAt: timestamp
+```
+
+**User Document:**
+```
+users/{userId}
+- email: string
+- name: string
+- role: 'super_admin' | 'company_admin' | 'supervisor' | 'technician' | 'staff' | 'viewer'
+- companyId: string (null for super admin)
+- companyName: string
+- isActive: boolean
+```
+
+**Asset Document:**
+```
+assets/{assetId}
+- name: string
+- assetCode: string
+- companyId: string
+- companyName: string
+- createdBy: string
+- ...
+```
+
+### Security Rules
+
+Firestore security rules should include:
+```javascript
+// Users can only read their company's data
+allow read: if request.auth.token.companyId == resource.data.companyId 
+             || request.auth.token.role == 'super_admin';
+
+// Users can only write to their company
+allow write: if request.auth.token.companyId == resource.data.companyId;
+```
+
+### Company Context Flow
+
+1. **Login**: User authenticates, `companyId` loaded from user profile
+2. **Query**: All Firestore queries filtered by `companyId`
+3. **Create**: New assets/work orders automatically tagged with `companyId`
+4. **Super Admin**: Can switch `companyId` context via Company Selector
+5. **UI**: Components show/hide based on role and company context
 
 ## Support
 
@@ -275,3 +415,5 @@ For issues, check:
 2. Browser console (web)
 3. Metro bundler logs (mobile)
 4. Functions emulator logs
+5. Verify company context in authStore
+6. Check Firestore documents have correct `companyId`

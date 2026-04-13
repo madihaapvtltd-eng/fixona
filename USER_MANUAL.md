@@ -7,16 +7,17 @@ Complete guide on how to use Fixora for each user role.
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
-2. [User Role: Regular User](#user-role-regular-user)
-3. [User Role: Technician](#user-role-technician)
-4. [User Role: Supervisor](#user-role-supervisor)
-5. [User Role: Admin](#user-role-admin)
-6. [User Role: Purchasing](#user-role-purchasing)
+2. [User Role: Viewer](#user-role-viewer)
+3. [User Role: Staff](#user-role-staff)
+4. [User Role: Technician](#user-role-technician)
+5. [User Role: Supervisor](#user-role-supervisor)
+6. [User Role: Company Admin](#user-role-company-admin)
 7. [User Role: Super Admin](#user-role-super-admin)
-8. [Work Orders](#work-orders)
-9. [Assets](#assets)
-10. [Purchase Workflow](#purchase-workflow)
-11. [Notifications](#notifications)
+8. [Company Management](#company-management)
+9. [Work Orders](#work-orders)
+10. [Assets](#assets)
+11. [Purchase Workflow](#purchase-workflow)
+12. [Notifications](#notifications)
 
 ---
 
@@ -39,9 +40,38 @@ The main navigation menu includes:
 
 ---
 
-## User Role: Regular User
+## User Role: Viewer
 
-As a regular user, you can create work orders and track their progress.
+As a viewer, you have read-only access to view work orders and assets within your company.
+
+### Viewing Work Orders
+
+1. Go to "Work Orders" page
+2. See all work orders in your company
+3. Use filters to find specific work orders:
+   - By status (Open, In Progress, Completed)
+   - By date range
+   - By priority
+4. Click on a work order to see full details and activity history
+
+### Viewing Assets
+
+1. Go to "Assets" page
+2. View all company assets and their status
+3. See asset details, maintenance history, and QR codes
+4. Cannot edit or delete assets
+
+### Tracking Progress
+
+- Check the "Activity History" section to see updates
+- View assigned staff and their comments
+- Receive notifications when status changes
+
+---
+
+## User Role: Staff
+
+As a staff member, you can create work orders and track their progress within your company.
 
 ### Creating a Work Order
 
@@ -180,15 +210,25 @@ After approving quotation:
 
 ---
 
-## User Role: Admin
+## User Role: Company Admin
 
-As an admin, you oversee the system, approve purchases, and manage users.
+As a company admin, you oversee your company's system, manage company users, approve purchases, and view company reports.
 
-### Managing Work Orders
+### Managing Company Work Orders
 
-- View all work orders in the system
+- View all work orders in your company
 - Reassign work orders if needed
-- Delete work orders if required (admin only)
+- Delete work orders if required
+- Filter by company context automatically
+
+### Managing Company Users
+
+1. Go to "Users" page (accessible if you have permissions)
+2. View all users in your company
+3. Create new users and assign roles:
+   - Staff, Viewer, Technician, Supervisor, Company Admin
+4. Deactivate user accounts if needed
+5. Edit user information and role assignments
 
 ### Approving Purchase Quotations
 
@@ -203,76 +243,80 @@ As an admin, you oversee the system, approve purchases, and manage users.
 2. Click **"Mark as Paid"** when payment processed
 3. System notifies next person in workflow
 
-### Managing Assets
+### Managing Company Assets
 
 1. Go to "Assets" page
-2. View asset details, maintenance history, QR codes
+2. View asset details, maintenance history, QR codes for your company
 3. Edit asset information
-4. Delete assets if needed (admin only)
+4. Delete assets if needed
+5. All assets automatically tagged with your company ID
 
----
+### Data Isolation
 
-## User Role: Purchasing
-
-As purchasing staff, you handle quotations and procurement.
-
-### Acknowledging Purchase Requests
-
-1. Receive notification when assigned
-2. Open the work order
-3. Click **"Acknowledge & Start Quotation"**
-4. Status updates to "Quotation In Progress"
-
-### Getting Quotations
-
-1. Contact suppliers for prices
-2. Collect multiple quotations if needed
-3. Compare prices and quality
-
-### Submitting Quotations
-
-1. Click **"Submit Quotation for Signature"**
-2. Add supplier details and pricing
-3. Attach quotation documents if needed
-4. Supervisor/Admin will review
-
-### Handling Rejections
-
-If quotation rejected:
-
-1. Review rejection comments
-2. Get new quotations
-3. Click **"Get New Quotation"** to resubmit
-
-### Collecting Items
-
-After payment is done:
-
-1. Receive assignment notification
-2. Collect items from supplier
-3. Click **"Mark Items Collected"**
-4. Hand over to technician
-5. Technician confirms receipt
+- You only see data from your company
+- Assets, users, and work orders are filtered by company
+- Cannot access other companies' data
 
 ---
 
 ## User Role: Super Admin
 
-As super admin, you have full system control.
+As super admin, you have full system control across all companies.
 
 ### System Administration
 
-- Manage all users and roles
-- Delete work orders and assets
-- View system-wide analytics
+- Manage all companies in the system
+- Manage all users across all companies
+- View data across all companies
+- Delete work orders and assets from any company
 - Configure system settings
 
-### Managing Users
+### Login
 
-1. Access user management panel
-2. Create new users
-3. Assign roles
-4. Deactivate accounts if needed
+1. Navigate to `/superadmin/login`
+2. Enter your super admin credentials
+3. Click "Sign In to Super Admin"
+4. You will be redirected to the Companies management page
+
+### Managing Companies
+
+1. Access **Companies** page from the menu
+2. View all companies in the system
+3. Create new companies:
+   - Click "Add Company"
+   - Enter company name and code
+   - Add address and contact information
+   - Set company status (Active/Inactive)
+4. Edit existing companies
+5. Activate or deactivate companies
+6. Search and filter companies
+
+### Managing Users Across Companies
+
+1. Access **Users** page from the menu
+2. View all users across all companies
+3. Filter users by company
+4. Create new users:
+   - Select company assignment
+   - Choose role (Company Admin, Supervisor, Technician, Staff, Viewer)
+   - Set user status (Active/Inactive)
+5. Edit user information and role
+6. Change user company assignment
+7. Activate or deactivate users
+
+### Company Context Switching
+
+- Use the **Company Selector** dropdown to switch between companies
+- View data filtered by selected company
+- All assets, users, and work orders show based on selected company
+- Switch company to manage different company data
+
+### Cross-Company Visibility
+
+- View work orders from all companies
+- View assets from all companies
+- View users from all companies
+- Generate system-wide reports
 
 ### Deleting Records
 
@@ -287,6 +331,102 @@ As super admin, you have full system control.
 2. Click **"Delete Asset"** button
 3. Confirm deletion
 4. Asset and all history removed
+
+**Companies:**
+1. Go to Companies page
+2. Click "Delete" on the company
+3. Confirm deletion
+4. Note: Deleting a company may affect associated users
+
+**Users:**
+1. Go to Users page
+2. Click "Delete" on the user
+3. Confirm deletion
+4. User account is permanently removed
+
+---
+
+## Company Management
+
+### Overview
+
+Fixora supports multiple companies with complete data isolation. Each company has its own:
+- Assets and inventory
+- Users and staff
+- Work orders and maintenance history
+- Reports and analytics
+
+### Creating a Company (Super Admin Only)
+
+1. Login as Super Admin at `/superadmin/login`
+2. Go to **Companies** page
+3. Click **"Add Company"**
+4. Fill in company details:
+   - **Company Name**: Full legal name
+   - **Company Code**: Short unique identifier
+   - **Address**: Physical location
+   - **Contact Info**: Phone, email, website
+   - **Status**: Active or Inactive
+5. Click **"Create"**
+
+### Managing Company Users
+
+**Assigning Users to a Company:**
+1. Go to **Users** page
+2. Click **"Add User"**
+3. Select company from dropdown
+4. Assign role based on responsibilities:
+   - **Company Admin**: Full company management
+   - **Supervisor**: Assign work and approve purchases
+   - **Technician**: Execute maintenance work
+   - **Staff**: Create work orders
+   - **Viewer**: Read-only access
+5. Set user as Active
+6. User can now login and see only their company data
+
+**Changing User Company:**
+1. Find user in Users list
+2. Click **"Edit"**
+3. Change company assignment
+4. Save changes
+5. User will now see data from new company
+
+### Data Isolation Features
+
+**Automatic Filtering:**
+- Users see only their company's assets
+- Work orders filtered by user's company
+- Reports show only company-specific data
+- QR codes include company context
+
+**Cross-Company Protection:**
+- Company admins cannot see other companies
+- Users cannot access data outside their company
+- Assets are tagged with company ID on creation
+- All queries filtered by company context
+
+### Company Selector (Super Admin)
+
+When logged in as Super Admin:
+1. See **Company Selector** dropdown in header
+2. Switch between companies to manage data
+3. Create assets for specific company
+4. View reports by company
+5. All actions apply to selected company context
+
+### Best Practices
+
+**For Super Admin:**
+- Create companies before adding users
+- Assign at least one Company Admin per company
+- Use company codes that are easy to identify
+- Deactivate (don't delete) companies when not in use
+
+**For Company Admin:**
+- Assign appropriate roles based on job function
+- Keep user list updated - deactivate old employees
+- Use consistent naming for assets
+- Train users on company-specific procedures
 
 ---
 
