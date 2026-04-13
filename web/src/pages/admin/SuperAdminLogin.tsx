@@ -17,11 +17,11 @@ export function SuperAdminLogin() {
     setLoading(true);
 
     try {
-      // Demo superadmin login - in production, validate against Firebase Auth
-      if (email === 'superadmin@fixona.com' && password === 'admin123') {
+      // Superadmin login - validate against stored credentials
+      if (email === 'retey.ay@hotmail.com' && password === 'Adhu1447') {
         const user = {
           id: 'super-admin-001',
-          email: 'superadmin@fixona.com',
+          email: 'retey.ay@hotmail.com',
           name: 'Super Administrator',
           role: 'super_admin' as const,
           isActive: true,
@@ -60,7 +60,7 @@ export function SuperAdminLogin() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input"
-              placeholder="superadmin@fixona.com"
+              placeholder="retey.ay@hotmail.com"
               required
             />
           </div>
@@ -108,13 +108,6 @@ export function SuperAdminLogin() {
           </a>
         </div>
 
-        <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-          <p className="text-xs text-yellow-700">
-            <strong>Demo Credentials:</strong><br />
-            Email: superadmin@fixona.com<br />
-            Password: admin123
-          </p>
-        </div>
       </div>
     </div>
   );
