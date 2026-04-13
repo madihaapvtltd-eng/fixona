@@ -5,7 +5,7 @@ import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc, serverTimestamp
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { useAuthStore, type User as UserType, type Company, Permission, hasPermission } from '@/stores/authStore';
-import { Users, Plus, Search, Edit2, Trash2, Building2, Shield, UserCheck, UserX, Filter } from 'lucide-react';
+import { Users, Plus, Search, Edit2, Trash2, Building2, Shield, UserCheck, UserX, Filter, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { Modal } from '@/components/ui/Modal';
@@ -125,11 +125,15 @@ export function UsersPage() {
 
   // Update user mutation
   const updateMutation = useMutation(
-    async ({ id, data }: { id: string; data: Partial<UserFormData> }) => {
+    async ({ id, data, features }: { id: string; data: Partial<UserFormData>; features?: UserType['features'] }) => {
       const updateData: any = { ...data };
       if (data.companyId) {
         const company = companies.find(c => c.id === data.companyId);
         updateData.companyName = company?.name || '';
+      }
+      // Include features if provided
+      if (features) {
+        updateData.features = features;
       }
       await updateDoc(doc(db, 'users', id), updateData);
       return true;
@@ -546,6 +550,62 @@ if (!canAccessUsers) {
               Active User
             </label>
           </div>
+
+          {/* Feature Toggles */}
+          {editingUser && (
+            <div className="border-t border-gray-200 pt-4 mt-4">
+              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <Settings size={18} />
+                Feature Access (Toggle ON/OFF)
+              </h3>
+              <p className="text-sm text-gray-500 mb-3">
+                Control which features this user can access. All features are enabled by default.
+              </p>
+              
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {[
+                  { key: 'assets', label: 'Assets Management' },
+                  { key: 'generators', label: 'Power Generators' },
+                  { key: 'coldRooms', label: 'Cold Rooms & Refrigeration' },
+                  { key: 'workOrders', label: 'Work Orders' },
+                  { key: 'fuelRequests', label: 'Fuel Requests' },
+                  { key: 'inventory', label: 'Inventory' },
+                  { key: 'staff', label: 'Staff Management' },
+                  { key: 'reports', label: 'Reports' },
+                  { key: 'technician', label: 'Technician Mobile' },
+                  { key: 'projects', label: 'Projects' },
+                  { key: 'housekeeping', label: 'Housekeeping' },
+                  { key: 'poolSpa', label: 'Pool & Spa' },
+                  { key: 'waterManagement', label: 'Water & Energy' },
+                  { key: 'staffScheduling', label: 'Staff Scheduling' },
+                  { key: 'waterSports', label: 'Water Sports' },
+                  { key: 'foodBeverage', label: 'Food & Beverage' },
+                  { key: 'fleet', label: 'Fleet Management' },
+                  { key: 'security', label: 'Security & Safety' },
+                  { key: 'guestExperience', label: 'Guest Experience' },
+                ].map((feature) => (
+                  <div key={feature.key} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                    <span className="text-sm text-gray-700">{feature.label}</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editingUser.features?.[feature.key as keyof UserType['features']] !== false}
+                        onChange={(e) => {
+                          const newFeatures = { 
+                            ...editingUser.features, 
+                            [feature.key]: e.target.checked 
+                          };
+                          setEditingUser({ ...editingUser, features: newFeatures });
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-3 pt-4 sticky bottom-0 bg-white">
             <button

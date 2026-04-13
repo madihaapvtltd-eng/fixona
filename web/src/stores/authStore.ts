@@ -54,6 +54,30 @@ export interface User {
 
   createdAt?: any;
 
+  // Feature toggles - all default to true, superadmin can disable
+  features?: {
+    generators?: boolean;
+    coldRooms?: boolean;
+    workOrders?: boolean;
+    fuelRequests?: boolean;
+    inventory?: boolean;
+    staff?: boolean;
+    reports?: boolean;
+    technician?: boolean;
+    assets?: boolean;
+    projects?: boolean;
+    // New resort features
+    housekeeping?: boolean;
+    poolSpa?: boolean;
+    waterManagement?: boolean;
+    staffScheduling?: boolean;
+    waterSports?: boolean;
+    foodBeverage?: boolean;
+    fleet?: boolean;
+    security?: boolean;
+    guestExperience?: boolean;
+  };
+
 }
 
 
@@ -202,6 +226,8 @@ interface AuthState {
 
   getCompanyId: () => string | undefined;
 
+  hasFeature: (featureName: keyof User['features']) => boolean;
+
 }
 
 
@@ -276,6 +302,17 @@ export const useAuthStore = create<AuthState>()(
       getCompanyId: () => {
         const state = get();
         return state.currentCompany?.id || state.user?.companyId;
+      },
+
+      hasFeature: (featureName: keyof User['features']) => {
+        const state = get();
+        if (!state.user) return false;
+        // Super admins always have access to all features
+        if (state.user.role === 'super_admin') return true;
+        // Check if feature is explicitly disabled (default is true/enabled)
+        const features = state.user.features;
+        if (!features) return true; // Default: all features enabled
+        return features[featureName] !== false; // Return true unless explicitly false
       },
     }),
 

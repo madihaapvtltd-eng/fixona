@@ -40,19 +40,19 @@ interface DashboardLayoutProps {
 }
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Projects', href: '/projects', icon: Briefcase },
-  { name: 'Assets', href: '/assets', icon: Building2 },
-  { name: 'Generators', href: '/generators', icon: Zap },
-  { name: 'Cold Rooms', href: '/cold-rooms', icon: Snowflake },
-  { name: 'Work Orders', href: '/work-orders', icon: Wrench },
-  { name: 'Fuel Requests', href: '/fuel-requests', icon: Fuel },
-  { name: 'Inventory', href: '/inventory', icon: Package },
-  { name: 'Staff', href: '/staff', icon: Users },
-  { name: 'Reports', href: '/reports', icon: FileText },
-  { name: 'Technician', href: '/technician', icon: Smartphone },
-  { name: 'Settings', href: '/settings', icon: Settings },
-  { name: 'User Manual', href: '/help/user-manual', icon: Book },
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard, feature: null },
+  { name: 'Projects', href: '/projects', icon: Briefcase, feature: 'projects' },
+  { name: 'Assets', href: '/assets', icon: Building2, feature: 'assets' },
+  { name: 'Generators', href: '/generators', icon: Zap, feature: 'generators' },
+  { name: 'Cold Rooms', href: '/cold-rooms', icon: Snowflake, feature: 'coldRooms' },
+  { name: 'Work Orders', href: '/work-orders', icon: Wrench, feature: 'workOrders' },
+  { name: 'Fuel Requests', href: '/fuel-requests', icon: Fuel, feature: 'fuelRequests' },
+  { name: 'Inventory', href: '/inventory', icon: Package, feature: 'inventory' },
+  { name: 'Staff', href: '/staff', icon: Users, feature: 'staff' },
+  { name: 'Reports', href: '/reports', icon: FileText, feature: 'reports' },
+  { name: 'Technician', href: '/technician', icon: Smartphone, feature: 'technician' },
+  { name: 'Settings', href: '/settings', icon: Settings, feature: null },
+  { name: 'User Manual', href: '/help/user-manual', icon: Book, feature: null },
 ];
 
 // Admin navigation - only for super admins
@@ -68,8 +68,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const notificationRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout, isSuperAdmin } = useAuthStore();
+  const { user, logout, isSuperAdmin, hasFeature } = useAuthStore();
   const superAdmin = isSuperAdmin();
+  
+  // Filter navigation based on user features
+  const filteredNavigation = navigation.filter(item => {
+    if (!item.feature) return true; // Always show items without feature key
+    if (superAdmin) return true; // Super admins see everything
+    return hasFeature(item.feature as any); // Check if user has feature enabled
+  });
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useRealtimeNotifications();
 
   // Close notifications when clicking outside
@@ -116,7 +123,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
               <div className="flex-1 h-0 overflow-y-auto">
                 <nav className="px-2 py-4 space-y-1">
-                  {navigation.map((item) => {
+                  {filteredNavigation.map((item) => {
                     const isActive = location.pathname === item.href ||
                       location.pathname.startsWith(item.href + '/');
                     return (
@@ -191,7 +198,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
           <div className="flex-1 flex flex-col overflow-y-auto">
             <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-              {navigation.map((item) => {
+              {filteredNavigation.map((item) => {
                 const isActive = location.pathname === item.href ||
                   location.pathname.startsWith(item.href + '/');
                 return (
