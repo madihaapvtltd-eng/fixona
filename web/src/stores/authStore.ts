@@ -1,169 +1,278 @@
 import { create } from 'zustand';
+
 import { persist } from 'zustand/middleware';
 
+
+
 export interface Company {
+
   id: string;
+
   name: string;
+
   code: string;
+
   address?: string;
+
   phone?: string;
+
   email?: string;
+
   logo?: string;
+
   isActive: boolean;
+
   createdAt: any;
+
 }
+
+
 
 export interface User {
+
   id: string;
+
   email: string;
+
   name: string;
+
   role: 'super_admin' | 'company_admin' | 'supervisor' | 'technician' | 'staff' | 'viewer';
+
   companyId?: string;
+
   companyName?: string;
+
   avatar?: string;
+
   phone?: string;
+
   department?: string;
+
   isActive: boolean;
+
   lastLoginAt?: any;
+
   createdAt?: any;
+
 }
+
+
 
 export type Permission = 
+
   | 'companies:read' | 'companies:create' | 'companies:update' | 'companies:delete'
+
   | 'users:read' | 'users:create' | 'users:update' | 'users:delete'
+
   | 'assets:read' | 'assets:create' | 'assets:update' | 'assets:delete'
+
   | 'work_orders:read' | 'work_orders:create' | 'work_orders:update' | 'work_orders:delete'
+
   | 'fuel:read' | 'fuel:create' | 'fuel:update' | 'fuel:delete'
+
   | 'generators:read' | 'generators:create' | 'generators:update' | 'generators:delete'
+
   | 'reports:read' | 'reports:export'
+
   | 'settings:read' | 'settings:update';
 
+
+
 const rolePermissions: Record<User['role'], Permission[]> = {
+
   super_admin: [
+
     'companies:read', 'companies:create', 'companies:update', 'companies:delete',
+
     'users:read', 'users:create', 'users:update', 'users:delete',
+
     'assets:read', 'assets:create', 'assets:update', 'assets:delete',
+
     'work_orders:read', 'work_orders:create', 'work_orders:update', 'work_orders:delete',
+
     'fuel:read', 'fuel:create', 'fuel:update', 'fuel:delete',
+
     'generators:read', 'generators:create', 'generators:update', 'generators:delete',
+
     'reports:read', 'reports:export',
+
     'settings:read', 'settings:update'
+
   ],
+
   company_admin: [
+
     'users:read', 'users:create', 'users:update', 'users:delete',
+
     'assets:read', 'assets:create', 'assets:update', 'assets:delete',
+
     'work_orders:read', 'work_orders:create', 'work_orders:update', 'work_orders:delete',
+
     'fuel:read', 'fuel:create', 'fuel:update', 'fuel:delete',
+
     'generators:read', 'generators:create', 'generators:update', 'generators:delete',
+
     'reports:read', 'reports:export',
+
     'settings:read', 'settings:update'
+
   ],
+
   supervisor: [
+
     'users:read',
+
     'assets:read', 'assets:create', 'assets:update',
+
     'work_orders:read', 'work_orders:create', 'work_orders:update', 'work_orders:delete',
+
     'fuel:read', 'fuel:create', 'fuel:update',
+
     'generators:read', 'generators:create', 'generators:update',
+
     'reports:read'
+
   ],
+
   technician: [
+
     'assets:read',
+
     'work_orders:read', 'work_orders:update',
+
     'fuel:read', 'fuel:create',
+
     'generators:read'
+
   ],
+
   staff: [
+
     'assets:read',
+
     'work_orders:read',
+
     'fuel:read'
+
   ],
+
   viewer: [
+
     'assets:read',
+
     'work_orders:read',
+
     'reports:read'
+
   ]
+
 };
+
+
 
 interface AuthState {
+
   user: User | null;
+
   currentCompany: Company | null;
+
   companies: Company[];
+
   loading: boolean;
+
   setUser: (user: User | null) => void;
+
   setCurrentCompany: (company: Company | null) => void;
+
   setCompanies: (companies: Company[]) => void;
+
   setLoading: (loading: boolean) => void;
+
   logout: () => void;
+
   clearStorage: () => void;
+
   hasPermission: (permission: Permission) => boolean;
+
   isSuperAdmin: () => boolean;
+
   isCompanyAdmin: () => boolean;
+
   canManageCompany: (companyId: string) => boolean;
+
   getCompanyId: () => string | undefined;
+
 }
 
+
+
 export const hasPermission = (user: User | null, permission: Permission): boolean => {
+
   if (!user) return false;
+
   const permissions = rolePermissions[user.role] || [];
+
   return permissions.includes(permission);
+
 };
 
+
+
 export const useAuthStore = create<AuthState>()(
+
   persist(
-    (set, get) => ({
+
+    (set) => ({
+
       user: null,
-      currentCompany: null,
-      companies: [],
-      loading: false,
+
+      loading: false, // Start as false so app renders immediately
+
       setUser: (user) => set({ user }),
-      setCurrentCompany: (company) => set({ currentCompany: company }),
-      setCompanies: (companies) => set({ companies }),
+
       setLoading: (loading) => set({ loading }),
+
       logout: () => {
-        set({ user: null, currentCompany: null, companies: [] });
+
+        set({ user: null });
+
         localStorage.removeItem('auth-storage');
+
       },
+
       clearStorage: () => {
-        set({ user: null, currentCompany: null, companies: [], loading: false });
+
+        set({ user: null, loading: false });
+
         localStorage.removeItem('auth-storage');
+
         sessionStorage.clear();
+
+        // Clear all caches
+
         if ('caches' in window) {
+
           caches.keys().then((names) => {
+
             names.forEach((name) => caches.delete(name));
+
           });
+
         }
+
       },
-      hasPermission: (permission: Permission) => {
-        const user = get().user;
-        if (!user) return false;
-        const permissions = rolePermissions[user.role] || [];
-        return permissions.includes(permission);
-      },
-      isSuperAdmin: () => {
-        return get().user?.role === 'super_admin';
-      },
-      isCompanyAdmin: () => {
-        return get().user?.role === 'company_admin';
-      },
-      canManageCompany: (companyId: string) => {
-        const user = get().user;
-        if (!user) return false;
-        if (user.role === 'super_admin') return true;
-        return user.companyId === companyId && (user.role === 'company_admin' || user.role === 'supervisor');
-      },
-      getCompanyId: () => {
-        const user = get().user;
-        return user?.companyId;
-      },
+
     }),
+
     {
+
       name: 'auth-storage',
-      partialize: (state) => ({ 
-        user: state.user, 
-        currentCompany: state.currentCompany,
-        companies: state.companies,
-        loading: false 
-      }),
+
+      partialize: (state) => ({ user: state.user, loading: false }), // Don't persist loading state
+
     }
+
   )
+
 );
+

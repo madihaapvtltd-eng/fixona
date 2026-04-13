@@ -51,9 +51,9 @@ export function UsersPage() {
   const { user, isSuperAdmin, companies, setCompanies } = useAuthStore();
   const queryClient = useQueryClient();
 
-  // Fetch companies if not loaded
+  // Fetch companies whenever modal opens or on mount
   useEffect(() => {
-    if (companies.length === 0 && isSuperAdmin()) {
+    if (isSuperAdmin()) {
       const fetchCompanies = async () => {
         const snap = await getDocs(collection(db, 'companies'));
         const comps = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Company[];
@@ -61,7 +61,7 @@ export function UsersPage() {
       };
       fetchCompanies();
     }
-  }, [companies.length, isSuperAdmin, setCompanies]);
+  }, [isSuperAdmin, setCompanies, isModalOpen]);
 
   // Fetch users
   const { data: users, isLoading } = useQuery('users', async () => {
