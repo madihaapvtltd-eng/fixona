@@ -93,8 +93,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const filteredNavigation = navigation.filter(item => {
     if (!item.feature) return true; // Always show items without feature key
     if (superAdmin) return true; // Super admins see everything
-    return hasFeature(item.feature as any); // Check if user has feature enabled
+    const hasAccess = hasFeature(item.feature as any);
+    console.log(`[DEBUG] Feature ${item.feature}: ${hasAccess ? 'VISIBLE' : 'HIDDEN'}`);
+    return hasAccess;
   });
+  
+  console.log('[DEBUG] User role:', user?.role);
+  console.log('[DEBUG] Is super admin:', superAdmin);
+  console.log('[DEBUG] User features:', user?.features);
+  console.log('[DEBUG] Filtered nav count:', filteredNavigation.length, 'of', navigation.length);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useRealtimeNotifications();
 
   // Close notifications when clicking outside
