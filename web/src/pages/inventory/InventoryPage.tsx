@@ -1,17 +1,33 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
-import { collection, getDocs, query, orderBy, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, where, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAuthStore } from '@/stores/authStore';
 import { Plus, Search } from 'lucide-react';
 
 export function InventoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const { user, getCompanyId, isSuperAdmin } = useAuthStore();
+  const companyId = getCompanyId();
 
-  const { data: items, isLoading } = useQuery('inventory', async () => {
-    const q = query(collection(db, 'inventory'), orderBy('name'));
+  const { data: items, isLoading } = useQuery(['inventory', companyId], async () => {
+    let q;
+    if (isSuperAdmin() && !companyId) {
+      q = query(collection(db, 'inventory'), orderBy('name'));
+    } else if (companyId) {
+      q = query(
+        collection(db, 'inventory'),
+        where('companyId', '==', companyId),
+        orderBy('name')
+      );
+    } else {
+      return [];
+    }
     const snap = await getDocs(q);
     return snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => ({ id: d.id, ...d.data() }));
+  }, {
+    enabled: !!user && (!!companyId || isSuperAdmin()),
   });
 
   const filteredItems = items?.filter((item: DocumentData) =>

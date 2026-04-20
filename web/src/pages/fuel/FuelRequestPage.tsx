@@ -57,12 +57,25 @@ export function FuelRequestPage() {
     notes: '',
   });
 
-  // Load vehicles (only vehicle and machinery types)
+  // Load vehicles (only vehicle and machinery types) - with company filter
   useEffect(() => {
     const loadVehicles = async () => {
       try {
-        // Load all assets and filter in memory to avoid index issues
-        const snap = await getDocs(collection(db, 'assets'));
+        // CRITICAL: Filter by company for data isolation
+        const { getCompanyId, isSuperAdmin } = useAuthStore.getState();
+        const companyId = getCompanyId();
+        
+        let assetsQuery;
+        if (isSuperAdmin() && !companyId) {
+          assetsQuery = collection(db, 'assets');
+        } else if (companyId) {
+          assetsQuery = query(collection(db, 'assets'), where('companyId', '==', companyId));
+        } else {
+          setVehicles([]);
+          return;
+        }
+        
+        const snap = await getDocs(assetsQuery);
         const allAssets = snap.docs.map(d => ({
           id: d.id,
           ...d.data()

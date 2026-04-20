@@ -16,11 +16,20 @@ import { useAuthStore } from '@/stores/authStore';
 import { notifyWorkOrderAssigned, notifyPurchaseRequest } from '@/lib/notificationHelpers';
 import toast from 'react-hot-toast';
 
-// Fetch all users for assignment
-async function fetchStaffUsers() {
-  const usersRef = collection(db, 'users');
-  // Fetch ALL users - any role can be assigned work orders
-  const snapshot = await getDocs(usersRef);
+// Fetch users for assignment - filtered by company
+async function fetchStaffUsers(companyId?: string) {
+  let q;
+  if (companyId) {
+    q = query(
+      collection(db, 'users'),
+      where('companyId', '==', companyId),
+      where('isActive', '==', true)
+    );
+  } else {
+    // Fallback - but this shouldn't happen for non-super-admins
+    q = query(collection(db, 'users'), where('isActive', '==', true));
+  }
+  const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 

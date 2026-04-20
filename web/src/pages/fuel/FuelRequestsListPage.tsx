@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
-import { collection, getDocs, query, orderBy, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, where, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAuthStore } from '@/stores/authStore';
 import { Plus, Fuel, Search, Filter, CheckCircle, XCircle, Clock, Car, Gauge, DollarSign, User, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -207,10 +208,26 @@ export function FuelRequestsListPage() {
     printWindow.document.close();
   };
 
-  const { data: requests, isLoading, refetch } = useQuery('fuelRequests', async () => {
-    const q = query(collection(db, 'fuel_requests'), orderBy('createdAt', 'desc'));
+  const { user, getCompanyId, isSuperAdmin } = useAuthStore();
+  const companyId = getCompanyId();
+
+  const { data: requests, isLoading, refetch } = useQuery(['fuelRequests', companyId], async () => {
+    let q;
+    if (isSuperAdmin() && !companyId) {
+      q = query(collection(db, 'fuel_requests'), orderBy('createdAt', 'desc'));
+    } else if (companyId) {
+      q = query(
+        collection(db, 'fuel_requests'),
+        where('companyId', '==', companyId),
+        orderBy('createdAt', 'desc')
+      );
+    } else {
+      return [];
+    }
     const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() })) as FuelRequest[];
+    return snap.docs.map(d => ({ id: d.id, ...(d.data() as object) })) as FuelRequest[];
+  }, {
+    enabled: !!user && (!!companyId || isSuperAdmin()),
   });
 
   const filteredRequests = requests?.filter(req => {

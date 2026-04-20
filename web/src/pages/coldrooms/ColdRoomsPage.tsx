@@ -6,9 +6,9 @@ import { Modal } from '@/components/ui/Modal';
 import type { ColdRoomAsset } from '@/types/coldroom';
 import { 
   Thermometer, Plus, Search, CheckCircle, AlertTriangle, 
-  Clock, Droplets, Snowflake, Calendar, ChevronRight
+  Clock, Droplets, Snowflake, Calendar, ChevronRight, Bell, X
 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 
 // Status Badge Component
 function ColdRoomStatusBadge({ status, currentTemp, minTemp, maxTemp }: { 
@@ -69,15 +69,19 @@ function TemperatureGauge({ temp, min, max, target }: { temp?: number; min: numb
 }
 
 // Check Status Indicator
-function CheckStatus({ morningDone, eveningDone }: { morningDone: boolean; eveningDone: boolean }) {
+function CheckStatus({ morningDone, middayDone, eveningDone }: { morningDone: boolean; middayDone: boolean; eveningDone: boolean }) {
   return (
-    <div className="flex items-center gap-2 text-sm">
-      <div className="flex items-center gap-1">
-        <CheckCircle size={14} className={morningDone ? 'text-green-500' : 'text-gray-300'} />
+    <div className="flex items-center gap-1 text-xs">
+      <div className="flex items-center gap-0.5">
+        <CheckCircle size={12} className={morningDone ? 'text-green-500' : 'text-gray-300'} />
         <span className={morningDone ? 'text-green-700' : 'text-gray-400'}>AM</span>
       </div>
-      <div className="flex items-center gap-1">
-        <CheckCircle size={14} className={eveningDone ? 'text-green-500' : 'text-gray-300'} />
+      <div className="flex items-center gap-0.5">
+        <CheckCircle size={12} className={middayDone ? 'text-green-500' : 'text-gray-300'} />
+        <span className={middayDone ? 'text-green-700' : 'text-gray-400'}>MID</span>
+      </div>
+      <div className="flex items-center gap-0.5">
+        <CheckCircle size={12} className={eveningDone ? 'text-green-500' : 'text-gray-300'} />
         <span className={eveningDone ? 'text-green-700' : 'text-gray-400'}>PM</span>
       </div>
     </div>
@@ -88,25 +92,34 @@ export function ColdRoomsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRoom, setSelectedRoom] = useState<ColdRoomAsset | null>(null);
   const [showQuickCheck, setShowQuickCheck] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'normal' | 'warning' | 'critical'>('all');
+  const [showNotifications, setShowNotifications] = useState(true);
   
   const { data: coldRooms, isLoading } = useColdRooms();
-  const checkStatus = useTodayCheckStatus();
+  const { data: checkStatus } = useTodayCheckStatus();
   const { user } = useAuthStore();
   
   const canManage = user?.role === 'super_admin' || user?.role === 'company_admin' || user?.role === 'technician';
 
-  const filteredRooms = coldRooms?.filter(room => 
-    room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    room.assetCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    room.location?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredRooms = coldRooms?.filter(room => {
+    const matchesSearch = room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      room.assetCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      room.location?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || room.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  // Notifications for critical and warning
+  const criticalRooms = coldRooms?.filter(r => r.status === 'critical') || [];
+  const warningRooms = coldRooms?.filter(r => r.status === 'warning') || [];
+  const hasNotifications = criticalRooms.length > 0 || warningRooms.length > 0;
 
   // Stats
   const normalCount = coldRooms?.filter(r => r.status === 'normal').length || 0;
   const warningCount = coldRooms?.filter(r => r.status === 'warning').length || 0;
   const criticalCount = coldRooms?.filter(r => r.status === 'critical').length || 0;
   const totalChecks = checkStatus?.length || 0;
-  const completedChecks = checkStatus?.filter(s => s.morningDone && s.eveningDone).length || 0;
+  const completedChecks = checkStatus?.filter((s: any) => s.morningDone && s.middayDone && s.eveningDone).length || 0;
 
   if (isLoading) {
     return (
@@ -149,9 +162,71 @@ export function ColdRoomsPage() {
         </div>
       </div>
 
+      {/* Notifications Banner */}
+      {showNotifications && hasNotifications && (
+        <div className="space-y-2">
+          {criticalRooms.map(room => (
+            <div key={room.id} className="card bg-red-50 border-red-300 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <Bell className="text-red-600" size={20} />
+                </div>
+                <div>
+                  <p className="font-medium text-red-800">Critical Alert: {room.name}</p>
+                  <p className="text-sm text-red-600">
+                    Temperature {room.currentTemp}°C is out of range ({room.minTemp}°C - {room.maxTemp}°C)
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link 
+                  to={`/cold-rooms/${room.id}`}
+                  className="btn btn-sm btn-primary"
+                >
+                  View Details
+                </Link>
+                <button 
+                  onClick={() => setShowNotifications(false)}
+                  className="p-1 text-red-400 hover:text-red-600"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+          ))}
+          {warningRooms.map(room => (
+            <div key={room.id} className="card bg-yellow-50 border-yellow-300 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-yellow-100 rounded-lg">
+                  <AlertTriangle className="text-yellow-600" size={20} />
+                </div>
+                <div>
+                  <p className="font-medium text-yellow-800">Warning: {room.name}</p>
+                  <p className="text-sm text-yellow-600">
+                    Temperature {room.currentTemp}°C is near limit ({room.minTemp}°C - {room.maxTemp}°C)
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link 
+                  to={`/cold-rooms/${room.id}`}
+                  className="btn btn-sm btn-primary"
+                >
+                  View Details
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card bg-green-50 border-green-200">
+        <button 
+          type="button"
+          onClick={() => setStatusFilter(statusFilter === 'normal' ? 'all' : 'normal')}
+          className={`card text-left cursor-pointer transition-all hover:shadow-md active:scale-95 ${statusFilter === 'normal' ? 'ring-2 ring-green-500' : 'bg-green-50 border-green-200'}`}
+        >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 rounded-lg">
               <Thermometer className="text-green-600" size={24} />
@@ -161,9 +236,14 @@ export function ColdRoomsPage() {
               <p className="text-2xl font-bold text-green-700">{normalCount}</p>
             </div>
           </div>
-        </div>
+          {statusFilter === 'normal' && <p className="text-xs text-green-600 mt-2">Click to show all</p>}
+        </button>
 
-        <div className="card bg-yellow-50 border-yellow-200">
+        <button 
+          type="button"
+          onClick={() => setStatusFilter(statusFilter === 'warning' ? 'all' : 'warning')}
+          className={`card text-left cursor-pointer transition-all hover:shadow-md active:scale-95 ${statusFilter === 'warning' ? 'ring-2 ring-yellow-500' : 'bg-yellow-50 border-yellow-200'}`}
+        >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-yellow-100 rounded-lg">
               <AlertTriangle className="text-yellow-600" size={24} />
@@ -173,9 +253,14 @@ export function ColdRoomsPage() {
               <p className="text-2xl font-bold text-yellow-700">{warningCount}</p>
             </div>
           </div>
-        </div>
+          {statusFilter === 'warning' && <p className="text-xs text-yellow-600 mt-2">Click to show all</p>}
+        </button>
 
-        <div className="card bg-red-50 border-red-200">
+        <button 
+          type="button"
+          onClick={() => setStatusFilter(statusFilter === 'critical' ? 'all' : 'critical')}
+          className={`card text-left cursor-pointer transition-all hover:shadow-md active:scale-95 ${statusFilter === 'critical' ? 'ring-2 ring-red-500' : 'bg-red-50 border-red-200'}`}
+        >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-red-100 rounded-lg">
               <Thermometer className="text-red-600" size={24} />
@@ -185,7 +270,8 @@ export function ColdRoomsPage() {
               <p className="text-2xl font-bold text-red-700">{criticalCount}</p>
             </div>
           </div>
-        </div>
+          {statusFilter === 'critical' && <p className="text-xs text-red-600 mt-2">Click to show all</p>}
+        </button>
 
         <div className="card bg-blue-50 border-blue-200">
           <div className="flex items-center gap-3">
@@ -200,6 +286,26 @@ export function ColdRoomsPage() {
         </div>
       </div>
 
+      {/* Filter Indicator */}
+      {statusFilter !== 'all' && (
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-gray-500">Filtered by:</span>
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+            statusFilter === 'normal' ? 'bg-green-100 text-green-700' :
+            statusFilter === 'warning' ? 'bg-yellow-100 text-yellow-700' :
+            'bg-red-100 text-red-700'
+          }`}>
+            {statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
+          </span>
+          <button 
+            onClick={() => setStatusFilter('all')}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Today's Status */}
       {checkStatus && checkStatus.length > 0 && (
         <div className="card">
@@ -212,18 +318,25 @@ export function ColdRoomsPage() {
               <div 
                 key={status.coldRoomId}
                 className={`p-3 rounded-lg border ${
-                  status.morningDone && status.eveningDone 
+                  status.morningDone && status.middayDone && status.eveningDone 
                     ? 'bg-green-50 border-green-200' 
                     : 'bg-yellow-50 border-yellow-200'
                 }`}
               >
                 <div className="text-sm font-medium text-gray-900 truncate">{status.coldRoomName}</div>
-                <CheckStatus morningDone={status.morningDone} eveningDone={status.eveningDone} />
-                {status.lastTemp !== undefined && (
-                  <div className="mt-1 text-xs text-gray-600">
-                    {status.lastTemp.toFixed(1)}°C
-                  </div>
-                )}
+                <CheckStatus morningDone={status.morningDone} middayDone={status.middayDone} eveningDone={status.eveningDone} />
+                {/* 3 Temperatures */}
+                <div className="mt-1 flex flex-wrap items-center gap-1 text-xs">
+                  {status.morningTemp !== undefined && (
+                    <span className="px-1 py-0.5 bg-blue-100 text-blue-700 rounded">AM: {status.morningTemp.toFixed(1)}°C</span>
+                  )}
+                  {status.middayTemp !== undefined && (
+                    <span className="px-1 py-0.5 bg-orange-100 text-orange-700 rounded">MID: {status.middayTemp.toFixed(1)}°C</span>
+                  )}
+                  {status.eveningTemp !== undefined && (
+                    <span className="px-1 py-0.5 bg-purple-100 text-purple-700 rounded">PM: {status.eveningTemp.toFixed(1)}°C</span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -288,7 +401,7 @@ export function ColdRoomsPage() {
                     max={room.maxTemp}
                     target={room.targetTemp}
                   />
-                  {room.lastCheckAt && (
+                  {room.lastCheckAt && !isNaN(new Date(room.lastCheckAt).getTime()) && (
                     <p className="text-xs text-gray-500 mt-1">
                       Last check: {format(new Date(room.lastCheckAt), 'MMM d, HH:mm')}
                     </p>
@@ -312,8 +425,21 @@ export function ColdRoomsPage() {
                   <div className="mb-4 p-2 bg-gray-50 rounded-lg">
                     <CheckStatus 
                       morningDone={status.morningDone} 
+                      middayDone={status.middayDone} 
                       eveningDone={status.eveningDone} 
                     />
+                    {/* 3 Temperatures */}
+                    <div className="mt-2 flex items-center gap-2 text-xs">
+                      {status.morningTemp !== undefined && (
+                        <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">AM: {status.morningTemp.toFixed(1)}°C</span>
+                      )}
+                      {status.middayTemp !== undefined && (
+                        <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">MID: {status.middayTemp.toFixed(1)}°C</span>
+                      )}
+                      {status.eveningTemp !== undefined && (
+                        <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded">PM: {status.eveningTemp.toFixed(1)}°C</span>
+                      )}
+                    </div>
                   </div>
                 )}
 

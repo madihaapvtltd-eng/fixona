@@ -26,7 +26,7 @@ function TempLogEntry({ log }: { log: TemperatureLog }) {
               {log.checkTime === 'morning' ? 'Morning' : 'Evening'} Check
             </span>
             <span className="text-xs text-gray-500">
-              {format(new Date(log.recordedAt), 'MMM d, yyyy HH:mm')}
+              {log.recordedAt && !isNaN(new Date(log.recordedAt).getTime()) ? format(new Date(log.recordedAt), 'MMM d, yyyy HH:mm') : 'Unknown'}
             </span>
           </div>
           <div className="mt-1 flex items-center gap-4">
@@ -86,7 +86,7 @@ function MaintenanceEntry({ record }: { record: ColdRoomMaintenanceRecord }) {
             {typeLabels[record.type] || record.type}
           </span>
           <div className="text-sm font-medium text-gray-900 mt-1">
-            {record.scheduledDate ? format(new Date(record.scheduledDate), 'MMM d, yyyy') : 'Unknown'}
+            {record.scheduledDate ? (isNaN(new Date(record.scheduledDate).getTime()) ? 'Unknown' : format(new Date(record.scheduledDate), 'MMM d, yyyy')) : 'Unknown'}
           </div>
           <div className="text-sm text-gray-500">
             {record.technician}
@@ -158,7 +158,7 @@ export function ColdRoomDetailPage() {
 
   // Chart data
   const chartData = tempLogs?.slice().reverse().map(log => ({
-    time: format(new Date(log.recordedAt), 'MMM d HH:mm'),
+    time: log.recordedAt && !isNaN(new Date(log.recordedAt).getTime()) ? format(new Date(log.recordedAt), 'MMM d HH:mm') : 'Unknown',
     temp: log.temperature,
     humidity: log.humidity,
   })) || [];
@@ -256,7 +256,7 @@ export function ColdRoomDetailPage() {
         {coldRoom.lastCheckAt && (
           <div className="mt-4 pt-4 border-t border-blue-100">
             <p className="text-sm text-gray-600">
-              Last check: {format(new Date(coldRoom.lastCheckAt), 'MMM d, yyyy HH:mm')}
+              Last check: {coldRoom.lastCheckAt && !isNaN(new Date(coldRoom.lastCheckAt).getTime()) ? format(new Date(coldRoom.lastCheckAt), 'MMM d, yyyy HH:mm') : 'Unknown'}
             </p>
           </div>
         )}

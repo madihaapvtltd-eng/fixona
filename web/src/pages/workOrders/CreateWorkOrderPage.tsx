@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ALL_LOCATIONS } from '@/lib/locations';
 import { DEPARTMENTS } from '@/lib/departments';
@@ -56,9 +56,17 @@ export function CreateWorkOrderPage() {
         const deptSnap = await getDocs(collection(db, 'settings', 'departments', 'items'));
         setDynamicDepartments(deptSnap.docs.map(d => ({ id: d.id, ...d.data() })));
         
-        // Load assets for optional selection
-        const assetsSnap = await getDocs(collection(db, 'assets'));
-        setAssets(assetsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        // Load assets for optional selection - CRITICAL: Filter by company
+        if (user?.companyId) {
+          const assetsQuery = query(
+            collection(db, 'assets'),
+            where('companyId', '==', user.companyId)
+          );
+          const assetsSnap = await getDocs(assetsQuery);
+          setAssets(assetsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        } else {
+          setAssets([]);
+        }
       } catch (error) {
         console.error('Failed to load settings:', error);
         toast.error('Failed to load locations/departments');

@@ -3,15 +3,31 @@ import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { collection, getDocs, query, where, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAuthStore } from '@/stores/authStore';
 import { Search, User as UserIcon, Star, Wrench, Plus } from 'lucide-react';
 
 export function StaffPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const { user, getCompanyId, isSuperAdmin } = useAuthStore();
+  const companyId = getCompanyId();
 
-  const { data: users, isLoading } = useQuery('users', async () => {
-    const q = query(collection(db, 'users'), where('isActive', '==', true));
+  const { data: users, isLoading } = useQuery(['users', companyId], async () => {
+    let q;
+    if (isSuperAdmin() && !companyId) {
+      q = query(collection(db, 'users'), where('isActive', '==', true));
+    } else if (companyId) {
+      q = query(
+        collection(db, 'users'),
+        where('companyId', '==', companyId),
+        where('isActive', '==', true)
+      );
+    } else {
+      return [];
+    }
     const snap = await getDocs(q);
     return snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => ({ id: d.id, ...d.data() }));
+  }, {
+    enabled: !!user && (!!companyId || isSuperAdmin()),
   });
 
   const filteredUsers = users?.filter((user: DocumentData) =>

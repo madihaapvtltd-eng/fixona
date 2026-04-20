@@ -86,13 +86,35 @@ export function ProjectsListPage() {
   const { user } = useAuthStore();
 
   useEffect(() => {
-    fetchProjects();
-  }, []);
+    if (user) {
+      fetchProjects();
+    }
+  }, [user]);
 
   const fetchProjects = async () => {
     try {
+      console.log('[PROJECTS DEBUG] user:', user?.email, 'companyId:', user?.companyId, 'role:', user?.role);
       const projectsRef = collection(db, 'projects');
-      const q = query(projectsRef, orderBy('createdAt', 'desc'));
+      // CRITICAL: Filter by companyId for data isolation
+      let q;
+      if (user?.companyId) {
+        console.log('[PROJECTS DEBUG] Filtering by companyId:', user.companyId);
+        q = query(
+          projectsRef, 
+          where('companyId', '==', user.companyId),
+          orderBy('createdAt', 'desc')
+        );
+      } else if (user?.role === 'super_admin') {
+        // Super admin can see all projects
+        console.log('[PROJECTS DEBUG] Superadmin mode - loading all projects');
+        q = query(projectsRef, orderBy('createdAt', 'desc'));
+      } else {
+        // No company assigned - show empty
+        console.log('[PROJECTS DEBUG] NO companyId - showing empty');
+        setProjects([]);
+        setLoading(false);
+        return;
+      }
       const snapshot = await getDocs(q);
       const projectsData = snapshot.docs.map(doc => ({
         id: doc.id,

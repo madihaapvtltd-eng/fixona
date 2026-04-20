@@ -66,6 +66,7 @@ export function NewUserPage() {
         department: formData.department,
         phone: formData.phone,
         isActive: true,
+        companyId: currentUser?.companyId, // CRITICAL: Associate with same company
         createdAt: new Date().toISOString(),
         createdBy: currentUser?.id,
       });

@@ -181,6 +181,7 @@ function App() {
         <Route path="/cold-rooms/new" element={<NewColdRoomPage />} />
         <Route path="/cold-rooms/:id" element={<ColdRoomDetailPage />} />
         <Route path="/cold-rooms/temperature-log" element={<TemperatureLogPage />} />
+        <Route path="/cold-rooms/:id/temperature-log" element={<TemperatureLogPage />} />
         
         {/* Help & Documentation */}
         <Route path="/help/user-manual" element={<UserManualPage />} />

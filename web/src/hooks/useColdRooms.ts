@@ -124,8 +124,9 @@ export function useLogTemperature() {
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('temperatureLogs');
-        queryClient.invalidateQueries('coldRooms');
+        queryClient.invalidateQueries({ queryKey: ['temperatureLogs'] });
+        queryClient.invalidateQueries({ queryKey: ['coldRooms'] });
+        queryClient.invalidateQueries({ queryKey: ['todayCheckStatus'] });
         toast.success('Temperature logged successfully');
       },
       onError: () => toast.error('Failed to log temperature'),
@@ -180,23 +181,27 @@ export function useCheckStatus(coldRoomId: string) {
   const todayLogs = logs?.filter(l => new Date(l.recordedAt).toDateString() === today);
   
   const morningDone = todayLogs?.some(l => l.checkTime === 'morning');
+  const middayDone = todayLogs?.some(l => l.checkTime === 'midday');
   const eveningDone = todayLogs?.some(l => l.checkTime === 'evening');
   
   // Determine which check is needed
-  let neededCheck: 'morning' | 'evening' | null = null;
+  let neededCheck: 'morning' | 'midday' | 'evening' | null = null;
   
   if (hour >= 8 && hour < 18 && !morningDone) {
     neededCheck = 'morning';
+  } else if (hour >= 11 && hour < 16 && !middayDone) {
+    neededCheck = 'midday';
   } else if (hour >= 16 && hour < 22 && !eveningDone) {
     neededCheck = 'evening';
   }
   
   return {
     morningDone,
+    middayDone,
     eveningDone,
     neededCheck,
     todayLogs,
-    isComplete: morningDone && eveningDone,
+    isComplete: morningDone && middayDone && eveningDone,
   };
 }
 
@@ -367,25 +372,46 @@ export function useColdRoomMaintenance(coldRoomId?: string) {
 export function useTodayCheckStatus() {
   const { data: coldRooms } = useColdRooms();
   const { data: allLogs } = useTemperatureLogs();
+  const { user } = useAuthStore();
   
-  const now = new Date();
-  const today = now.toDateString();
-  
-  const status = coldRooms?.map(room => {
-    const roomLogs = allLogs?.filter(l => 
-      l.coldRoomId === room.id && 
-      new Date(l.recordedAt).toDateString() === today
-    );
-    
-    return {
-      coldRoomId: room.id,
-      coldRoomName: room.name,
-      morningDone: roomLogs?.some(l => l.checkTime === 'morning'),
-      eveningDone: roomLogs?.some(l => l.checkTime === 'evening'),
-      lastTemp: room.currentTemp,
-      status: room.status,
-    };
+  return useQuery({
+    queryKey: ['todayCheckStatus', allLogs?.length, coldRooms?.length],
+    queryFn: () => {
+      const now = new Date();
+      const today = now.toDateString();
+      
+      const status = coldRooms?.map(room => {
+        const roomLogs = allLogs?.filter(l => {
+          if (l.coldRoomId !== room.id) return false;
+          // Handle Firestore Timestamp or Date
+          const recordedAt = (l.recordedAt && typeof (l.recordedAt as any).toDate === 'function') 
+            ? (l.recordedAt as any).toDate() 
+            : new Date(l.recordedAt);
+          return recordedAt.toDateString() === today;
+        });
+        
+        // Get temps for each check time
+        const morningLog = roomLogs?.find(l => l.checkTime === 'morning');
+        const middayLog = roomLogs?.find(l => l.checkTime === 'midday');
+        const eveningLog = roomLogs?.find(l => l.checkTime === 'evening');
+        
+        return {
+          coldRoomId: room.id,
+          coldRoomName: room.name,
+          morningDone: !!morningLog,
+          middayDone: !!middayLog,
+          eveningDone: !!eveningLog,
+          morningTemp: morningLog?.temperature,
+          middayTemp: middayLog?.temperature,
+          eveningTemp: eveningLog?.temperature,
+          lastTemp: room.currentTemp,
+          status: room.status,
+        };
+      });
+      
+      return status || [];
+    },
+    enabled: !!user && !!coldRooms && !!allLogs,
+    staleTime: 0, // Always refetch when invalidated
   });
-  
-  return status || [];
 }

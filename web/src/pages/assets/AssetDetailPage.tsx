@@ -33,13 +33,26 @@ export function AssetDetailPage() {
     return data;
   });
 
-  const { data: workOrders } = useQuery(['assetWorkOrders', id], async () => {
+  const { data: workOrders } = useQuery(['assetWorkOrders', id, user?.companyId], async () => {
     if (!id) return [];
-    const q = query(
-      collection(db, 'work_orders'),
-      where('assetId', '==', id),
-      orderBy('createdAt', 'desc')
-    );
+    // CRITICAL: Add company filter for data isolation
+    let q;
+    if (user?.companyId) {
+      q = query(
+        collection(db, 'work_orders'),
+        where('assetId', '==', id),
+        where('companyId', '==', user.companyId),
+        orderBy('createdAt', 'desc')
+      );
+    } else if (isSuperAdmin) {
+      q = query(
+        collection(db, 'work_orders'),
+        where('assetId', '==', id),
+        orderBy('createdAt', 'desc')
+      );
+    } else {
+      return [];
+    }
     const snap = await getDocs(q);
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   });

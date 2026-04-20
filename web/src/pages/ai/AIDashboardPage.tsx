@@ -2,20 +2,31 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from 'react-query';
 import { collection, getDocs, query, where, orderBy, limit, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAuthStore } from '@/stores/authStore';
 import { runAIPeriodicAnalysis, analyzeAssetForRisk, suggestPMSchedule } from '@/lib/aiAutomation';
 import { Brain, AlertTriangle, TrendingUp, Clock, CheckCircle, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
 export function AIDashboardPage() {
+  const { user, getCompanyId, isSuperAdmin } = useAuthStore();
+  const companyId = getCompanyId();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResults, setAnalysisResults] = useState<any>(null);
 
-  // Fetch high-risk assets
+  // Fetch high-risk assets with company filter
   const { data: highRiskAssets, isLoading: loadingAssets } = useQuery(
-    'highRiskAssets',
+    ['highRiskAssets', companyId],
     async () => {
-      const assetsSnap = await getDocs(collection(db, 'assets'));
+      let q;
+      if (isSuperAdmin() && !companyId) {
+        q = collection(db, 'assets');
+      } else if (companyId) {
+        q = query(collection(db, 'assets'), where('companyId', '==', companyId));
+      } else {
+        return [];
+      }
+      const assetsSnap = await getDocs(q);
       const assets = assetsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       
       // Analyze each asset for risk
@@ -27,21 +38,40 @@ export function AIDashboardPage() {
       );
       
       return riskAnalysis.filter(a => a.analysis.shouldCreateWorkOrder || a.analysis.preventiveMaintenanceRecommended);
+    },
+    {
+      enabled: !!user && (!!companyId || isSuperAdmin()),
     }
   );
 
-  // Fetch recent AI-generated work orders
+  // Fetch recent AI-generated work orders with company filter
   const { data: aiWorkOrders } = useQuery(
-    'aiWorkOrders',
+    ['aiWorkOrders', companyId],
     async () => {
-      const q = query(
-        collection(db, 'work_orders'),
-        where('aiGenerated', '==', true),
-        orderBy('createdAt', 'desc'),
-        limit(10)
-      );
+      let q;
+      if (isSuperAdmin() && !companyId) {
+        q = query(
+          collection(db, 'work_orders'),
+          where('aiGenerated', '==', true),
+          orderBy('createdAt', 'desc'),
+          limit(10)
+        );
+      } else if (companyId) {
+        q = query(
+          collection(db, 'work_orders'),
+          where('aiGenerated', '==', true),
+          where('companyId', '==', companyId),
+          orderBy('createdAt', 'desc'),
+          limit(10)
+        );
+      } else {
+        return [];
+      }
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    },
+    {
+      enabled: !!user && (!!companyId || isSuperAdmin()),
     }
   );
 

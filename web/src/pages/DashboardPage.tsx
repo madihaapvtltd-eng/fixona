@@ -2,6 +2,7 @@ import { useQuery } from 'react-query';
 import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import type { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAuthStore } from '@/stores/authStore';
 import { format, isAfter, subDays } from 'date-fns';
 import {
   Wrench,
@@ -87,14 +88,55 @@ interface Project {
 }
 
 export function DashboardPage() {
-  // Fetch all data
-  const { data: stats } = useQuery('dashboardStats', async () => {
+  const { user, getCompanyId, isSuperAdmin } = useAuthStore();
+  const companyId = getCompanyId();
+  
+  console.log('[DASHBOARD DEBUG] user:', user?.email, 'companyId:', companyId, 'isSuperAdmin:', isSuperAdmin());
+  
+  // Fetch all data with company filtering
+  const { data: stats } = useQuery(['dashboardStats', companyId], async () => {
+    // Build queries based on companyId
+    let workOrdersQuery, assetsQuery, inventoryQuery, usersQuery, projectsQuery;
+    
+    if (isSuperAdmin() && !companyId) {
+      // Super admin without company sees all
+      console.log('[DASHBOARD DEBUG] Loading ALL data (superadmin mode)');
+      workOrdersQuery = collection(db, 'work_orders');
+      assetsQuery = collection(db, 'assets');
+      inventoryQuery = collection(db, 'inventory');
+      usersQuery = query(collection(db, 'users'), where('isActive', '==', true));
+      projectsQuery = collection(db, 'projects');
+    } else if (companyId) {
+      // Filter by company
+      console.log('[DASHBOARD DEBUG] Loading data filtered by companyId:', companyId);
+      workOrdersQuery = query(collection(db, 'work_orders'), where('companyId', '==', companyId));
+      assetsQuery = query(collection(db, 'assets'), where('companyId', '==', companyId));
+      inventoryQuery = query(collection(db, 'inventory'), where('companyId', '==', companyId));
+      usersQuery = query(
+        collection(db, 'users'), 
+        where('companyId', '==', companyId),
+        where('isActive', '==', true)
+      );
+      projectsQuery = query(collection(db, 'projects'), where('companyId', '==', companyId));
+    } else {
+      // No company - return empty data
+      console.log('[DASHBOARD DEBUG] NO companyId - returning EMPTY data');
+      return {
+        workOrders: [], assets: [], inventory: [], users: [], projects: [],
+        statusCounts: {}, priorityCounts: {},
+        openWO: 0, completedWO: 0, overdueWO: 0,
+        highRiskAssets: 0, criticalRiskAssets: 0, assetsUnderMaintenance: 0,
+        lowStockItems: 0, totalInventoryValue: 0,
+        activeUsers: 0, recentProjects: []
+      };
+    }
+    
     const [workOrdersSnap, assetsSnap, inventorySnap, usersSnap, projectsSnap] = await Promise.all([
-      getDocs(collection(db, 'work_orders')),
-      getDocs(collection(db, 'assets')),
-      getDocs(collection(db, 'inventory')),
-      getDocs(query(collection(db, 'users'), where('isActive', '==', true))),
-      getDocs(collection(db, 'projects')),
+      getDocs(workOrdersQuery),
+      getDocs(assetsQuery),
+      getDocs(inventoryQuery),
+      getDocs(usersQuery),
+      getDocs(projectsQuery),
     ]);
 
     const workOrders = workOrdersSnap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => d.data());

@@ -37,7 +37,7 @@ export interface ColdRoomAsset {
   qrCode?: string;
 }
 
-// Temperature Log Entry (2x daily checks)
+// Temperature Log Entry (3x daily checks)
 export interface TemperatureLog {
   id: string;
   coldRoomId: string;
@@ -46,7 +46,7 @@ export interface TemperatureLog {
   companyId?: string;
   
   // Check details
-  checkTime: 'morning' | 'evening';  // Morning or Evening check
+  checkTime: 'morning' | 'midday' | 'evening';  // Morning, Midday, or Evening check
   recordedAt: Date;                  // When temperature was recorded
   recordedBy: string;                // Staff name
   recordedById?: string;             // Staff ID
@@ -140,7 +140,8 @@ export interface ColdRoomMaintenanceRecord {
 // Temperature Check Schedule
 export const CHECK_TIMES = {
   MORNING: { label: 'Morning Check', time: '08:00', endTime: '10:00' },
-  EVENING: { label: 'Evening Check', time: '16:00', endTime: '18:00' },
+  MIDDAY: { label: 'Afternoon Check', time: '12:00', endTime: '14:00' },
+  EVENING: { label: 'Night Check', time: '16:00', endTime: '18:00' },
 } as const;
 
 // Check if temperature is within range

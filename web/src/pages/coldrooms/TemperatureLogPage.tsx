@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useColdRooms, useLogTemperature } from '@/hooks/useColdRooms';
 import { useAuthStore } from '@/stores/authStore';
 import { Modal } from '@/components/ui/Modal';
@@ -14,7 +14,7 @@ import toast from 'react-hot-toast';
 
 interface TemperatureFormData {
   coldRoomId: string;
-  checkTime: 'morning' | 'evening';
+  checkTime: 'morning' | 'midday' | 'evening';
   temperature: string;
   humidity: string;
   recordedBy: string;
@@ -52,6 +52,7 @@ const initialFormData: TemperatureFormData = {
 
 export function TemperatureLogPage() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
   const { data: coldRooms, isLoading } = useColdRooms();
   const { user } = useAuthStore();
   const logMutation = useLogTemperature();
@@ -62,9 +63,20 @@ export function TemperatureLogPage() {
   });
   const [selectedRoom, setSelectedRoom] = useState<ColdRoomAsset | null>(null);
   
+  // Pre-select cold room if ID is provided in URL
+  useEffect(() => {
+    if (id && coldRooms) {
+      const room = coldRooms.find(r => r.id === id);
+      if (room) {
+        setSelectedRoom(room);
+        setFormData(prev => ({ ...prev, coldRoomId: room.id }));
+      }
+    }
+  }, [id, coldRooms]);
+  
   const now = new Date();
   const hour = now.getHours();
-  const defaultCheckTime = hour >= 12 ? 'evening' : 'morning';
+  const defaultCheckTime = hour >= 15 ? 'evening' : hour >= 11 ? 'midday' : 'morning';
   
   // Set default check time on mount
   useState(() => {
@@ -100,7 +112,7 @@ export function TemperatureLogPage() {
       recordedBy: formData.recordedBy || user?.name || 'Unknown',
       recordedById: user?.id,
       temperature: temp,
-      humidity: formData.humidity ? parseFloat(formData.humidity) : undefined,
+      humidity: formData.humidity ? parseFloat(formData.humidity) : null,
       doorSealOk: formData.doorSealOk,
       condenserClean: formData.condenserClean,
       interiorClean: formData.interiorClean,
@@ -108,8 +120,8 @@ export function TemperatureLogPage() {
       lightsWorking: formData.lightsWorking,
       compressorRunning: formData.compressorRunning,
       issuesFound: formData.issuesFound,
-      issueDescription: formData.issuesFound ? formData.issueDescription : undefined,
-      actionTaken: formData.issuesFound ? formData.actionTaken : undefined,
+      issueDescription: formData.issuesFound ? formData.issueDescription : '',
+      actionTaken: formData.issuesFound ? formData.actionTaken : '',
       isOutOfRange,
     });
     
@@ -158,7 +170,7 @@ export function TemperatureLogPage() {
             <Thermometer className="text-blue-500" />
             Temperature Log
           </h1>
-          <p className="text-gray-500">Record AM/PM temperature checks</p>
+          <p className="text-gray-500">Record morning/afternoon/night temperature checks</p>
         </div>
       </div>
 
@@ -206,20 +218,42 @@ export function TemperatureLogPage() {
                 <div>
                   <label className="label">Check Time *</label>
                   <div className="flex gap-2">
-                    {(['morning', 'evening'] as const).map((time) => (
-                      <button
-                        key={time}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, checkTime: time })}
-                        className={`flex-1 py-2 px-4 rounded-lg border-2 capitalize ${
-                          formData.checkTime === time
-                            ? 'border-primary-600 bg-primary-50 text-primary-700'
-                            : 'border-gray-200 text-gray-700'
-                        }`}
-                      >
-                        {time}
-                      </button>
-                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, checkTime: 'morning' })}
+                      className={`flex-1 p-3 rounded-lg border-2 text-center transition-colors ${
+                        formData.checkTime === 'morning'
+                          ? 'border-primary-600 bg-primary-50'
+                          : 'border-gray-200 hover:border-primary-300'
+                      }`}
+                    >
+                      <div className="font-medium">Morning</div>
+                      <div className="text-xs text-gray-500">8:00 - 10:00</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, checkTime: 'midday' })}
+                      className={`flex-1 p-3 rounded-lg border-2 text-center transition-colors ${
+                        formData.checkTime === 'midday'
+                          ? 'border-primary-600 bg-primary-50'
+                          : 'border-gray-200 hover:border-primary-300'
+                      }`}
+                    >
+                      <div className="font-medium">Afternoon</div>
+                      <div className="text-xs text-gray-500">12:00 - 14:00</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, checkTime: 'evening' })}
+                      className={`flex-1 p-3 rounded-lg border-2 text-center transition-colors ${
+                        formData.checkTime === 'evening'
+                          ? 'border-primary-600 bg-primary-50'
+                          : 'border-gray-200 hover:border-primary-300'
+                      }`}
+                    >
+                      <div className="font-medium">Night</div>
+                      <div className="text-xs text-gray-500">16:00 - 18:00</div>
+                    </button>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
                     {CHECK_TIMES[formData.checkTime.toUpperCase() as keyof typeof CHECK_TIMES].time} - {CHECK_TIMES[formData.checkTime.toUpperCase() as keyof typeof CHECK_TIMES].endTime}

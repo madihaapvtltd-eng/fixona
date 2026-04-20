@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from 'react-query';
 import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAuthStore } from '@/stores/authStore';
 import { exportWorkOrdersToCSV, exportInventoryToCSV, exportAssetsToCSV, exportMaintenanceLogsToCSV } from '@/lib/csvExport';
 import { Download, FileText, BarChart3 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -9,12 +10,27 @@ import Papa from 'papaparse';
 
 export function ReportsPage() {
   const [reportType, setReportType] = useState('work_orders');
+  const { user, getCompanyId, isSuperAdmin } = useAuthStore();
+  const companyId = getCompanyId();
 
-  const { data: reportData, isLoading } = useQuery(['report', reportType], async () => {
+  const { data: reportData, isLoading } = useQuery(['report', reportType, companyId], async () => {
     let collectionRef = collection(db, reportType);
-    const q = query(collectionRef, orderBy('createdAt', 'desc'));
+    let q;
+    if (isSuperAdmin() && !companyId) {
+      q = query(collectionRef, orderBy('createdAt', 'desc'));
+    } else if (companyId) {
+      q = query(
+        collectionRef,
+        where('companyId', '==', companyId),
+        orderBy('createdAt', 'desc')
+      );
+    } else {
+      return [];
+    }
     const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return snap.docs.map(d => ({ id: d.id, ...(d.data() as object) }));
+  }, {
+    enabled: !!user && (!!companyId || isSuperAdmin()),
   });
 
   const exportCSV = () => {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAuthStore } from '@/stores/authStore';
 import { UserCard, StatCard, ActionButton } from '@/components/ui/ColorfulCards';
 import { 
   Users, Shield, Eye, Edit3, Trash2, Settings, 
@@ -15,6 +16,8 @@ import {
 import toast from 'react-hot-toast';
 
 export function AdminUserManagementPage() {
+  const { getCompanyId, isSuperAdmin } = useAuthStore();
+  const companyId = getCompanyId();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -34,10 +37,25 @@ export function AdminUserManagementPage() {
 
   useEffect(() => {
     loadUsers();
-  }, []);
+  }, [companyId]);
 
   const loadUsers = async () => {
-    const snapshot = await getDocs(collection(db, 'users'));
+    let q;
+    if (isSuperAdmin() && !companyId) {
+      // Super admin sees all users
+      q = collection(db, 'users');
+    } else if (companyId) {
+      // Filter by company
+      q = query(
+        collection(db, 'users'),
+        where('companyId', '==', companyId)
+      );
+    } else {
+      setUsers([]);
+      setLoading(false);
+      return;
+    }
+    const snapshot = await getDocs(q);
     const userData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     setUsers(userData);
     setLoading(false);

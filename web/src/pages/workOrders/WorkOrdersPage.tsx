@@ -25,37 +25,51 @@ export function WorkOrdersPage() {
     userDepartment 
   } = usePermissions();
 
-  const { data: workOrders, isLoading, error, refetch } = useQuery('workOrders', async () => {
+  const { data: workOrders, isLoading, error, refetch } = useQuery(['workOrders', user?.companyId], async () => {
     try {
       let q;
       
-      if (canViewAllWorkOrders || userRole === 'super_admin' || userRole === 'dept_admin') {
+      // CRITICAL: Always filter by companyId for data isolation
+      const companyId = user?.companyId;
+      
+      if (userRole === 'super_admin' && !companyId) {
+        // Super admin without company filter sees all
+        q = query(collection(db, 'work_orders'), orderBy('createdAt', 'desc'));
+      } else if (companyId) {
+        // Filter by company first
         if (canViewAllWorkOrders) {
-          q = query(collection(db, 'work_orders'), orderBy('createdAt', 'desc'));
-        } else {
           q = query(
             collection(db, 'work_orders'), 
+            where('companyId', '==', companyId),
+            orderBy('createdAt', 'desc')
+          );
+        } else if (userRole === 'dept_admin' && userDepartment) {
+          q = query(
+            collection(db, 'work_orders'), 
+            where('companyId', '==', companyId),
             where('department', '==', userDepartment),
+            orderBy('createdAt', 'desc')
+          );
+        } else {
+          // For regular users - get company work orders and filter client-side
+          q = query(
+            collection(db, 'work_orders'),
+            where('companyId', '==', companyId),
             orderBy('createdAt', 'desc')
           );
         }
       } else {
-        // For technicians - get all work orders without department filter
-        // and filter client-side by assigned user
-        q = query(
-          collection(db, 'work_orders'),
-          orderBy('createdAt', 'desc')
-        );
+        // No company assigned - return empty
+        return [];
       }
       
       const snap = await getDocs(q);
-      console.log('WorkOrders: Loaded', snap.docs.length, 'work orders');
-      const allWorkOrders = snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => ({ id: d.id, ...d.data() }));
+      console.log('WorkOrders: Loaded', snap.docs.length, 'work orders for company:', companyId);
+      let allWorkOrders = snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => ({ id: d.id, ...d.data() }));
       
-      // For non-admin users, filter to only show assigned work orders or ones they created
-      // Also show work orders with legacy createdBy values ('user', 'unknown')
+      // For non-admin users, additional filter to only show assigned work orders
       if (!canViewAllWorkOrders && userRole !== 'super_admin' && userRole !== 'dept_admin') {
-        return allWorkOrders.filter((wo: any) => 
+        allWorkOrders = allWorkOrders.filter((wo: any) => 
           wo.technicianId === user?.id || 
           wo.supervisorId === user?.id ||
           wo.createdBy === user?.id ||

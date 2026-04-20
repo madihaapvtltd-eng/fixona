@@ -4,7 +4,7 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { SearchableLocationDropdown } from '@/components/ui/SearchableLocationDropdown';
 import { uploadMultipleImages } from '@/lib/cloudinary';
 import { Link, useNavigate } from 'react-router-dom';
-import { collection, addDoc, getDocs } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuthStore } from '@/stores/authStore';
 import { useCompany } from '@/hooks/useCompany';
@@ -112,7 +112,14 @@ export function NewAssetPage() {
       const deptCode = formData.department.toUpperCase().slice(0, 2);
       
       // Generate sequential number (get count of existing assets with same pattern)
-      const assetsSnap = await getDocs(collection(db, 'assets'));
+      // CRITICAL: Filter by company for data isolation
+      let assetsQuery;
+      if (companyId) {
+        assetsQuery = query(collection(db, 'assets'), where('companyId', '==', companyId));
+      } else {
+        assetsQuery = collection(db, 'assets');
+      }
+      const assetsSnap = await getDocs(assetsQuery);
       const prefix = `MD${deptCode}${year}${locationShortName}`;
       const existingCodes = assetsSnap.docs
         .map(d => d.data().assetCode)

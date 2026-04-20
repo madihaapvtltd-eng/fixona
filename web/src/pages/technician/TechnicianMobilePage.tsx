@@ -214,8 +214,21 @@ function PartsUsage({ orderId, onSave }: { orderId: string; onSave: (parts: any[
   const [inventory, setInventory] = useState<any[]>([]);
 
   useEffect(() => {
-    // Load inventory for autocomplete
-    getDocs(collection(db, 'inventory')).then(snap => {
+    // Load inventory for autocomplete - with company filter
+    const { getCompanyId, isSuperAdmin } = useAuthStore.getState();
+    const companyId = getCompanyId();
+    
+    let inventoryQuery;
+    if (isSuperAdmin() && !companyId) {
+      inventoryQuery = collection(db, 'inventory');
+    } else if (companyId) {
+      inventoryQuery = query(collection(db, 'inventory'), where('companyId', '==', companyId));
+    } else {
+      setInventory([]);
+      return;
+    }
+    
+    getDocs(inventoryQuery).then(snap => {
       setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
   }, []);
