@@ -16,8 +16,9 @@ Complete guide on how to use Fixora for each user role.
 8. [Company Management](#company-management)
 9. [Work Orders](#work-orders)
 10. [Assets](#assets)
-11. [Purchase Workflow](#purchase-workflow)
-12. [Notifications](#notifications)
+11. [Cold Rooms & Temperature Logging](#cold-rooms--temperature-logging)
+12. [Purchase Workflow](#purchase-workflow)
+13. [Notifications](#notifications)
 
 ---
 
@@ -485,6 +486,77 @@ Every action is logged with:
 ### Asset Work Orders
 
 View all work orders related to a specific asset to track its maintenance history.
+
+---
+
+## Cold Rooms & Temperature Logging
+
+### Overview
+
+Cold Rooms feature allows monitoring of refrigeration units with **3x daily temperature checks**:
+- **Morning (AM)**: 8:00 - 10:00
+- **Midday (MID)**: 12:00 - 14:00  
+- **Evening (PM)**: 16:00 - 18:00
+
+### Cold Room Status Dashboard
+
+**Stats Cards** (clickable to filter):
+- **Normal** - Units within temperature range
+- **Warning** - Units near limit
+- **Critical** - Units out of range (red alerts)
+- **Today's Checks** - Shows completed checks (e.g., "3/24" means 3 out of 24 total checks done)
+
+**Notifications Banner**:
+- Displays warnings for units near limit
+- Displays critical alerts for out-of-range temperatures
+- Shows current temperature and allowed range
+- Click "View Details" to see full unit information
+
+### Today's Temperature Check Status
+
+Mini cards show per-unit status:
+- **AM/MID/PM indicators** - Green checkmark when logged, gray when pending
+- **3 Temperature badges** - Shows actual logged temps:
+  - Blue badge: Morning temp
+  - Orange badge: Midday temp
+  - Purple badge: Evening temp
+
+### Logging Temperature
+
+1. Click **"Log Temperature"** button
+2. Select cold room from dropdown
+3. Choose check time (Morning/Afternoon/Night)
+4. Enter temperature reading
+5. Optional: Add humidity, visual checks, notes
+6. Click **"Save Temperature Log"**
+
+### Visual Check Items
+
+When logging, you can verify:
+- Door seal intact
+- Condenser coils clean
+- Interior clean
+- No excessive ice buildup
+- Lights working
+- Compressor running normally
+
+### Temperature Status Colors
+
+| Status | Color | Meaning |
+|--------|-------|---------|
+| **Normal** | Green | Within range |
+| **Warning** | Yellow | Near limit (needs attention) |
+| **Critical** | Red | Out of range (immediate action) |
+
+### Cold Room Detail Page
+
+Shows:
+- Current temperature with gauge
+- Min/Max/Target temperature settings
+- **All 3 daily temperatures** with timestamps
+- Temperature history graph
+- Maintenance records
+- QR code for mobile access
 
 ---
 

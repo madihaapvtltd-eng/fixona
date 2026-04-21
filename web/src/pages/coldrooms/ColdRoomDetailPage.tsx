@@ -4,26 +4,35 @@ import { useQuery } from 'react-query';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuthStore } from '@/stores/authStore';
-import { useTemperatureLogs, useColdRoomAlerts, useColdRoomMaintenance } from '@/hooks/useColdRooms';
+import { useTemperatureLogs, useColdRoomAlerts, useColdRoomMaintenance, useDeleteTemperatureLog } from '@/hooks/useColdRooms';
 import { Modal } from '@/components/ui/Modal';
 import type { ColdRoomAsset, TemperatureLog, ColdRoomMaintenanceRecord } from '@/types/coldroom';
 import { getTempStatusColor, getCategoryLabel, CHECK_TIMES } from '@/types/coldroom';
 import { 
   Thermometer, ArrowLeft, Snowflake, AlertTriangle, CheckCircle,
-  Clock, Calendar, Wrench, Droplets, MapPin, FileText, ChevronRight
+  Clock, Calendar, Wrench, Droplets, MapPin, FileText, ChevronRight, Trash2
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 // Temperature Log Entry
-function TempLogEntry({ log }: { log: TemperatureLog }) {
+function TempLogEntry({ log, coldRoomId, isAdmin }: { log: TemperatureLog; coldRoomId: string; isAdmin: boolean }) {
+  const deleteLog = useDeleteTemperatureLog();
+  
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this temperature log?')) return;
+    await deleteLog.mutateAsync({ logId: log.id, coldRoomId });
+  };
+  
+  const checkTimeLabel = log.checkTime === 'morning' ? 'Morning' : log.checkTime === 'midday' ? 'Midday' : 'Evening';
+  
   return (
     <div className="p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50">
       <div className="flex items-start justify-between">
-        <div>
+        <div className="flex-1">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-900">
-              {log.checkTime === 'morning' ? 'Morning' : 'Evening'} Check
+              {checkTimeLabel} Check
             </span>
             <span className="text-xs text-gray-500">
               {log.recordedAt && !isNaN(new Date(log.recordedAt).getTime()) ? format(new Date(log.recordedAt), 'MMM d, yyyy HH:mm') : 'Unknown'}
@@ -33,7 +42,7 @@ function TempLogEntry({ log }: { log: TemperatureLog }) {
             <span className={`font-medium ${log.isOutOfRange ? 'text-red-600' : 'text-green-600'}`}>
               {log.temperature.toFixed(1)}°C
             </span>
-            {log.humidity !== undefined && (
+            {log.humidity !== undefined && log.humidity !== null && (
               <span className="text-sm text-gray-600">
                 <Droplets size={14} className="inline mr-1" />
                 {log.humidity}%
@@ -50,11 +59,21 @@ function TempLogEntry({ log }: { log: TemperatureLog }) {
             </div>
           )}
         </div>
-        <div>
+        <div className="flex items-center gap-2">
           {log.isOutOfRange ? (
             <AlertTriangle size={20} className="text-red-500" />
           ) : (
             <CheckCircle size={20} className="text-green-500" />
+          )}
+          {isAdmin && (
+            <button
+              onClick={handleDelete}
+              disabled={deleteLog.isLoading}
+              className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+              title="Delete log"
+            >
+              <Trash2 size={16} />
+            </button>
           )}
         </div>
       </div>
@@ -113,6 +132,9 @@ export function ColdRoomDetailPage() {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'overview' | 'temperature' | 'maintenance'>('overview');
   const [dateRange, setDateRange] = useState(7); // Days of history to show
+  
+  // Check if user is admin for delete permissions
+  const isAdmin = user?.role === 'super_admin' || user?.role === 'company_admin';
 
   // Fetch cold room
   const { data: coldRoom, isLoading: roomLoading } = useQuery(
@@ -384,7 +406,7 @@ export function ColdRoomDetailPage() {
           ) : (
             <div className="divide-y divide-gray-100">
               {tempLogs?.slice(0, 50).map(log => (
-                <TempLogEntry key={log.id} log={log} />
+                <TempLogEntry key={log.id} log={log} coldRoomId={id!} isAdmin={isAdmin} />
               ))}
             </div>
           )}

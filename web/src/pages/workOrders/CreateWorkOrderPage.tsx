@@ -102,6 +102,7 @@ export function CreateWorkOrderPage() {
         partsUsed: [],
         purchaseItems: [],
         createdBy: user?.id || 'unknown',
+        companyId: user?.companyId || null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         dueDate: formData.dueDate ? new Date(formData.dueDate) : null,

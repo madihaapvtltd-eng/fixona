@@ -134,6 +134,54 @@ export function useLogTemperature() {
   );
 }
 
+// Delete temperature log (Admin only)
+export function useDeleteTemperatureLog() {
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+
+  return useMutation(
+    async ({ logId, coldRoomId }: { logId: string; coldRoomId: string }) => {
+      // Check if user is admin
+      const isAdmin = user?.role === 'super_admin' || user?.role === 'company_admin';
+      if (!isAdmin) {
+        throw new Error('Only admins can delete temperature logs');
+      }
+      
+      await deleteDoc(doc(db, 'temperatureLogs', logId));
+      
+      // Update cold room to recalculate current temp (get latest remaining log)
+      const logsQuery = query(
+        collection(db, 'temperatureLogs'),
+        where('coldRoomId', '==', coldRoomId),
+        orderBy('recordedAt', 'desc')
+      );
+      const logsSnap = await getDocs(logsQuery);
+      const latestLog = logsSnap.docs[0]?.data() as TemperatureLog | undefined;
+      
+      if (latestLog) {
+        await updateDoc(doc(db, 'coldRooms', coldRoomId), {
+          currentTemp: latestLog.temperature,
+          currentHumidity: latestLog.humidity,
+          lastCheckAt: latestLog.recordedAt,
+          status: latestLog.isOutOfRange ? 'warning' : 'normal',
+          updatedAt: serverTimestamp(),
+        });
+      }
+      
+      return logId;
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['temperatureLogs'] });
+        queryClient.invalidateQueries({ queryKey: ['coldRooms'] });
+        queryClient.invalidateQueries({ queryKey: ['todayCheckStatus'] });
+        toast.success('Temperature log deleted');
+      },
+      onError: (err: any) => toast.error(err.message || 'Failed to delete log'),
+    }
+  );
+}
+
 // Fetch temperature logs
 export function useTemperatureLogs(coldRoomId?: string, dateFrom?: Date, dateTo?: Date) {
   const { user, getCompanyId } = useAuthStore();
