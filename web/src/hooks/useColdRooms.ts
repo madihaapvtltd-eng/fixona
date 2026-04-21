@@ -182,6 +182,59 @@ export function useDeleteTemperatureLog() {
   );
 }
 
+// Update temperature log (Admin only)
+export function useUpdateTemperatureLog() {
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+
+  return useMutation(
+    async ({ logId, data, coldRoomId }: { logId: string; data: Partial<TemperatureLog>; coldRoomId: string }) => {
+      // Check if user is admin
+      const isAdmin = user?.role === 'super_admin' || user?.role === 'company_admin';
+      if (!isAdmin) {
+        throw new Error('Only admins can edit temperature logs');
+      }
+      
+      await updateDoc(doc(db, 'temperatureLogs', logId), {
+        ...data,
+        updatedAt: serverTimestamp(),
+      });
+      
+      // Recalculate out of range status if temperature changed
+      const isOutOfRange = data.temperature !== undefined ? (data.temperature > 5 || data.temperature < 0) : undefined;
+      
+      // Update cold room if this was the latest log
+      const logsQuery = query(
+        collection(db, 'temperatureLogs'),
+        where('coldRoomId', '==', coldRoomId),
+        orderBy('recordedAt', 'desc')
+      );
+      const logsSnap = await getDocs(logsQuery);
+      const latestLog = logsSnap.docs[0];
+      
+      if (latestLog && latestLog.id === logId && isOutOfRange !== undefined) {
+        await updateDoc(doc(db, 'coldRooms', coldRoomId), {
+          currentTemp: data.temperature,
+          currentHumidity: data.humidity,
+          status: isOutOfRange ? 'warning' : 'normal',
+          updatedAt: serverTimestamp(),
+        });
+      }
+      
+      return logId;
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['temperatureLogs'] });
+        queryClient.invalidateQueries({ queryKey: ['coldRooms'] });
+        queryClient.invalidateQueries({ queryKey: ['todayCheckStatus'] });
+        toast.success('Temperature log updated');
+      },
+      onError: (err: any) => toast.error(err.message || 'Failed to update log'),
+    }
+  );
+}
+
 // Fetch temperature logs
 export function useTemperatureLogs(coldRoomId?: string, dateFrom?: Date, dateTo?: Date) {
   const { user, getCompanyId } = useAuthStore();

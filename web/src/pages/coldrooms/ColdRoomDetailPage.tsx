@@ -4,19 +4,19 @@ import { useQuery } from 'react-query';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuthStore } from '@/stores/authStore';
-import { useTemperatureLogs, useColdRoomAlerts, useColdRoomMaintenance, useDeleteTemperatureLog } from '@/hooks/useColdRooms';
+import { useTemperatureLogs, useColdRoomAlerts, useColdRoomMaintenance, useDeleteTemperatureLog, useUpdateTemperatureLog } from '@/hooks/useColdRooms';
 import { Modal } from '@/components/ui/Modal';
 import type { ColdRoomAsset, TemperatureLog, ColdRoomMaintenanceRecord } from '@/types/coldroom';
 import { getTempStatusColor, getCategoryLabel, CHECK_TIMES } from '@/types/coldroom';
 import { 
   Thermometer, ArrowLeft, Snowflake, AlertTriangle, CheckCircle,
-  Clock, Calendar, Wrench, Droplets, MapPin, FileText, ChevronRight, Trash2
+  Clock, Calendar, Wrench, Droplets, MapPin, FileText, ChevronRight, Trash2, Pencil
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 // Temperature Log Entry
-function TempLogEntry({ log, coldRoomId, isAdmin }: { log: TemperatureLog; coldRoomId: string; isAdmin: boolean }) {
+function TempLogEntry({ log, coldRoomId, isAdmin, onEdit }: { log: TemperatureLog; coldRoomId: string; isAdmin: boolean; onEdit?: (log: TemperatureLog) => void }) {
   const deleteLog = useDeleteTemperatureLog();
   
   const handleDelete = async () => {
@@ -66,14 +66,23 @@ function TempLogEntry({ log, coldRoomId, isAdmin }: { log: TemperatureLog; coldR
             <CheckCircle size={20} className="text-green-500" />
           )}
           {isAdmin && (
-            <button
-              onClick={handleDelete}
-              disabled={deleteLog.isLoading}
-              className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-              title="Delete log"
-            >
-              <Trash2 size={16} />
-            </button>
+            <>
+              <button
+                onClick={() => onEdit?.(log)}
+                className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                title="Edit log"
+              >
+                <Pencil size={16} />
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteLog.isLoading}
+                className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                title="Delete log"
+              >
+                <Trash2 size={16} />
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -132,9 +141,15 @@ export function ColdRoomDetailPage() {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'overview' | 'temperature' | 'maintenance'>('overview');
   const [dateRange, setDateRange] = useState(7); // Days of history to show
+  const [editLog, setEditLog] = useState<TemperatureLog | null>(null);
+  const [editTemp, setEditTemp] = useState('');
+  const [editHumidity, setEditHumidity] = useState('');
+  const [editIssues, setEditIssues] = useState(false);
+  const [editIssueDesc, setEditIssueDesc] = useState('');
   
   // Check if user is admin for delete permissions
   const isAdmin = user?.role === 'super_admin' || user?.role === 'company_admin';
+  const updateLog = useUpdateTemperatureLog();
 
   // Fetch cold room
   const { data: coldRoom, isLoading: roomLoading } = useQuery(
@@ -406,7 +421,19 @@ export function ColdRoomDetailPage() {
           ) : (
             <div className="divide-y divide-gray-100">
               {tempLogs?.slice(0, 50).map(log => (
-                <TempLogEntry key={log.id} log={log} coldRoomId={id!} isAdmin={isAdmin} />
+                <TempLogEntry 
+                  key={log.id} 
+                  log={log} 
+                  coldRoomId={id!} 
+                  isAdmin={isAdmin} 
+                  onEdit={(log) => {
+                    setEditLog(log);
+                    setEditTemp(log.temperature.toString());
+                    setEditHumidity(log.humidity?.toString() || '');
+                    setEditIssues(log.issuesFound || false);
+                    setEditIssueDesc(log.issueDescription || '');
+                  }}
+                />
               ))}
             </div>
           )}
@@ -435,6 +462,82 @@ export function ColdRoomDetailPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Edit Log Modal */}
+      {editLog && (
+        <Modal isOpen={!!editLog} onClose={() => setEditLog(null)} title="Edit Temperature Log">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Temperature (°C)</label>
+              <input
+                type="number"
+                step="0.1"
+                value={editTemp}
+                onChange={(e) => setEditTemp(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Humidity (%)</label>
+              <input
+                type="number"
+                value={editHumidity}
+                onChange={(e) => setEditHumidity(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="editIssues"
+                checked={editIssues}
+                onChange={(e) => setEditIssues(e.target.checked)}
+                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              <label htmlFor="editIssues" className="text-sm font-medium text-gray-700">Issues Found</label>
+            </div>
+            {editIssues && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Issue Description</label>
+                <textarea
+                  value={editIssueDesc}
+                  onChange={(e) => setEditIssueDesc(e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+            )}
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={() => setEditLog(null)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!editLog || !id) return;
+                  await updateLog.mutateAsync({
+                    logId: editLog.id,
+                    coldRoomId: id,
+                    data: {
+                      temperature: parseFloat(editTemp),
+                      humidity: editHumidity ? parseFloat(editHumidity) : null,
+                      issuesFound: editIssues,
+                      issueDescription: editIssues ? editIssueDesc : '',
+                    },
+                  });
+                  setEditLog(null);
+                }}
+                disabled={updateLog.isLoading}
+                className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              >
+                {updateLog.isLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
