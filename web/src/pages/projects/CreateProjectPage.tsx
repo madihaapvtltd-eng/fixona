@@ -6,11 +6,23 @@ import { useAuthStore } from '@/stores/authStore';
 import { ArrowLeft, Plus, Trash2, DollarSign, Users, Building, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+interface Task {
+  id: string;
+  description: string;
+  progress: number; // 0-100
+  estimatedCost: number;
+  hasCost: boolean;
+  assignedTo?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'on_hold';
+  startDate?: string;
+  endDate?: string;
+}
+
 interface DepartmentWork {
   department: string;
-  description: string;
-  estimatedCost: number;
+  tasks: Task[];
   isThirdParty: boolean;
+  comparisonContractors?: string[]; // For third party comparison (optional)
 }
 
 interface ThirdPartyContract {
@@ -83,7 +95,18 @@ export function CreateProjectPage() {
   });
 
   const [departmentWorks, setDepartmentWorks] = useState<DepartmentWork[]>([
-    { department: '', description: '', estimatedCost: 0, isThirdParty: false }
+    { 
+      department: '', 
+      tasks: [{ 
+        id: `task-${Date.now()}`,
+        description: '', 
+        progress: 0, 
+        estimatedCost: 0, 
+        hasCost: false,
+        status: 'pending' 
+      }], 
+      isThirdParty: false 
+    }
   ]);
 
   const [contracts, setContracts] = useState<ThirdPartyContract[]>([
@@ -102,7 +125,12 @@ export function CreateProjectPage() {
   const calculateFinancialSummary = (): FinancialSummary => {
     const estimatedDeptTotal = departmentWorks
       .filter(w => w.department)
-      .reduce((sum, w) => sum + (w.estimatedCost || 0), 0);
+      .reduce((sum, w) => {
+        const deptTotal = w.tasks.reduce((taskSum, task) => {
+          return taskSum + (task.hasCost ? (task.estimatedCost || 0) : 0);
+        }, 0);
+        return sum + deptTotal;
+      }, 0);
     
     const contractTotal = contracts
       .filter(c => c.contractorName)
@@ -119,7 +147,10 @@ export function CreateProjectPage() {
     departmentWorks.forEach(w => {
       if (w.department) {
         const current = deptMap.get(w.department) || { estimated: 0, actual: 0 };
-        deptMap.set(w.department, { ...current, estimated: current.estimated + (w.estimatedCost || 0) });
+        const deptTotal = w.tasks.reduce((taskSum, task) => {
+          return taskSum + (task.hasCost ? (task.estimatedCost || 0) : 0);
+        }, 0);
+        deptMap.set(w.department, { ...current, estimated: current.estimated + deptTotal });
       }
     });
     
@@ -235,7 +266,18 @@ export function CreateProjectPage() {
   };
 
   const addDepartmentWork = () => {
-    setDepartmentWorks([...departmentWorks, { department: '', description: '', estimatedCost: 0, isThirdParty: false }]);
+    setDepartmentWorks([...departmentWorks, { 
+      department: '', 
+      tasks: [{ 
+        id: `task-${Date.now()}`,
+        description: '', 
+        progress: 0, 
+        estimatedCost: 0, 
+        hasCost: false,
+        status: 'pending' 
+      }], 
+      isThirdParty: false 
+    }]);
   };
 
   const removeDepartmentWork = (index: number) => {
@@ -245,6 +287,32 @@ export function CreateProjectPage() {
   const updateDepartmentWork = (index: number, field: string, value: any) => {
     const updated = [...departmentWorks];
     updated[index] = { ...updated[index], [field]: value };
+    setDepartmentWorks(updated);
+  };
+
+  // Task management functions
+  const addTask = (deptIndex: number) => {
+    const updated = [...departmentWorks];
+    updated[deptIndex].tasks.push({
+      id: `task-${Date.now()}`,
+      description: '',
+      progress: 0,
+      estimatedCost: 0,
+      hasCost: false,
+      status: 'pending'
+    });
+    setDepartmentWorks(updated);
+  };
+
+  const removeTask = (deptIndex: number, taskIndex: number) => {
+    const updated = [...departmentWorks];
+    updated[deptIndex].tasks = updated[deptIndex].tasks.filter((_, i) => i !== taskIndex);
+    setDepartmentWorks(updated);
+  };
+
+  const updateTask = (deptIndex: number, taskIndex: number, field: string, value: any) => {
+    const updated = [...departmentWorks];
+    updated[deptIndex].tasks[taskIndex] = { ...updated[deptIndex].tasks[taskIndex], [field]: value };
     setDepartmentWorks(updated);
   };
 
@@ -428,14 +496,14 @@ export function CreateProjectPage() {
           </div>
 
           <div className="space-y-4">
-            {departmentWorks.map((work, index) => (
-              <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            {departmentWorks.map((work, deptIndex) => (
+              <div key={deptIndex} className="p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end mb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
                     <select
                       value={work.department}
-                      onChange={(e) => updateDepartmentWork(index, 'department', e.target.value)}
+                      onChange={(e) => updateDepartmentWork(deptIndex, 'department', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                     >
                       <option value="">Select Department</option>
@@ -445,32 +513,22 @@ export function CreateProjectPage() {
                     </select>
                   </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Work Description</label>
-                    <input
-                      type="text"
-                      value={work.description}
-                      onChange={(e) => updateDepartmentWork(index, 'description', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                      placeholder="Describe the work for this department"
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-end">
                     <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Est. Cost (MVR)</label>
-                      <input
-                        type="number"
-                        value={work.estimatedCost}
-                        onChange={(e) => updateDepartmentWork(index, 'estimatedCost', Number(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                        placeholder="0.00"
-                      />
+                      <label className="flex items-center mb-1">
+                        <input
+                          type="checkbox"
+                          checked={work.isThirdParty}
+                          onChange={(e) => updateDepartmentWork(deptIndex, 'isThirdParty', e.target.checked)}
+                          className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 mr-2"
+                        />
+                        <span className="text-sm font-medium text-gray-700">3rd Party Work</span>
+                      </label>
                     </div>
                     {departmentWorks.length > 1 && (
                       <button
                         type="button"
-                        onClick={() => removeDepartmentWork(index)}
+                        onClick={() => removeDepartmentWork(deptIndex)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
                       >
                         <Trash2 className="h-5 w-5" />
@@ -479,16 +537,163 @@ export function CreateProjectPage() {
                   </div>
                 </div>
 
-                <div className="mt-3">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={work.isThirdParty}
-                      onChange={(e) => updateDepartmentWork(index, 'isThirdParty', e.target.checked)}
-                      className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">This work is done by 3rd party contractor</span>
-                  </label>
+                {/* Third Party Comparison (Optional) */}
+                {work.isThirdParty && (
+                  <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Compare Contractors (Optional - add 2+ for comparison)
+                    </label>
+                    <div className="flex gap-2 flex-wrap">
+                      {work.comparisonContractors?.map((contractor, idx) => (
+                        <div key={idx} className="flex items-center gap-2 bg-white px-3 py-1 rounded-full">
+                          <span className="text-sm">{contractor}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...departmentWorks];
+                              updated[deptIndex].comparisonContractors = updated[deptIndex].comparisonContractors?.filter((_, i) => i !== idx);
+                              setDepartmentWorks(updated);
+                            }}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            const updated = [...departmentWorks];
+                            if (!updated[deptIndex].comparisonContractors) {
+                              updated[deptIndex].comparisonContractors = [];
+                            }
+                            updated[deptIndex].comparisonContractors.push(e.target.value);
+                            setDepartmentWorks(updated);
+                          }
+                        }}
+                        className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                      >
+                        <option value="">Add Contractor</option>
+                        {contracts.filter(c => c.contractorName).map(c => (
+                          <option key={c.contractorName} value={c.contractorName}>{c.contractorName}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tasks */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-700">Tasks</label>
+                    <button
+                      type="button"
+                      onClick={() => addTask(deptIndex)}
+                      className="inline-flex items-center px-2 py-1 text-xs font-medium text-primary-600 bg-primary-50 rounded hover:bg-primary-100"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Task
+                    </button>
+                  </div>
+
+                  {work.tasks.map((task, taskIndex) => (
+                    <div key={task.id} className="p-3 bg-white rounded-lg border border-gray-200">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Task Description</label>
+                          <input
+                            type="text"
+                            value={task.description}
+                            onChange={(e) => updateTask(deptIndex, taskIndex, 'description', e.target.value)}
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                            placeholder="Describe the task"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+                          <select
+                            value={task.status}
+                            onChange={(e) => updateTask(deptIndex, taskIndex, 'status', e.target.value)}
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                            <option value="on_hold">On Hold</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Progress: {task.progress}%</label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={task.progress}
+                            onChange={(e) => updateTask(deptIndex, taskIndex, 'progress', Number(e.target.value))}
+                            className="w-full"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="flex items-center mb-1">
+                            <input
+                              type="checkbox"
+                              checked={task.hasCost}
+                              onChange={(e) => updateTask(deptIndex, taskIndex, 'hasCost', e.target.checked)}
+                              className="h-3 w-3 text-primary-600 border-gray-300 rounded focus:ring-primary-500 mr-1"
+                            />
+                            <span className="text-xs font-medium text-gray-700">Has Cost</span>
+                          </label>
+                        </div>
+
+                        {task.hasCost && (
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Est. Cost (MVR)</label>
+                            <input
+                              type="number"
+                              value={task.estimatedCost}
+                              onChange={(e) => updateTask(deptIndex, taskIndex, 'estimatedCost', Number(e.target.value))}
+                              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                              placeholder="0.00"
+                            />
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Start Date</label>
+                          <input
+                            type="date"
+                            value={task.startDate || ''}
+                            onChange={(e) => updateTask(deptIndex, taskIndex, 'startDate', e.target.value)}
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">End Date</label>
+                          <input
+                            type="date"
+                            value={task.endDate || ''}
+                            onChange={(e) => updateTask(deptIndex, taskIndex, 'endDate', e.target.value)}
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                          />
+                        </div>
+                      </div>
+
+                      {work.tasks.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeTask(deptIndex, taskIndex)}
+                          className="text-xs text-red-600 hover:text-red-700"
+                        >
+                          Remove Task
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
