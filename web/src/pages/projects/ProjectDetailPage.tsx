@@ -34,14 +34,27 @@ interface Project {
   createdByName: string;
 }
 
+interface Task {
+  id: string;
+  description: string;
+  progress: number; // 0-100
+  estimatedCost: number;
+  hasCost: boolean;
+  assignedTo?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'on_hold';
+  startDate?: string;
+  endDate?: string;
+}
+
 interface DepartmentWork {
   department: string;
-  description: string;
-  estimatedCost: number;
-  actualCost: number;
-  status: 'pending' | 'in_progress' | 'completed';
-  assignedTo?: string;
+  tasks: Task[];
   isThirdParty: boolean;
+  comparisonContractors?: string[]; // For third party comparison (optional)
+  // Legacy fields for backward compatibility
+  description?: string;
+  estimatedCost?: number;
+  actualCost?: number;
 }
 
 interface ThirdPartyContract {
@@ -239,8 +252,23 @@ export function ProjectDetailPage() {
   const getWorkProgress = () => {
     const works = project?.departmentBreakdown || [];
     if (works.length === 0) return 0;
-    const completed = works.filter(w => w.status === 'completed').length;
-    return Math.round((completed / works.length) * 100);
+    
+    let totalTasks = 0;
+    let totalProgress = 0;
+    
+    works.forEach(work => {
+      if (work.tasks && work.tasks.length > 0) {
+        // New structure with tasks
+        totalTasks += work.tasks.length;
+        totalProgress += work.tasks.reduce((sum, task) => sum + task.progress, 0);
+      } else if (work.status) {
+        // Legacy structure - treat as single task
+        totalTasks += 1;
+        totalProgress += work.status === 'completed' ? 100 : work.status === 'in_progress' ? 50 : 0;
+      }
+    });
+    
+    return totalTasks > 0 ? Math.round(totalProgress / totalTasks) : 0;
   };
 
   if (loading) {
@@ -449,32 +477,109 @@ export function ProjectDetailPage() {
             {project.departmentBreakdown?.length === 0 ? (
               <p className="text-gray-500 text-center py-8">No work breakdown defined</p>
             ) : (
-              <div className="space-y-3">
-                {project.departmentBreakdown.map((work, index) => (
-                  <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h4 className="font-medium text-gray-900">{work.department}</h4>
+              <div className="space-y-4">
+                {project.departmentBreakdown.map((work, deptIndex) => (
+                  <div key={deptIndex} className="border border-gray-200 rounded-lg overflow-hidden">
+                    {/* Department Header */}
+                    <div className="p-4 bg-gray-50 border-b border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-gray-900">{work.department}</h4>
                           {work.isThirdParty && (
                             <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
                               3rd Party
                             </span>
                           )}
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            work.status === 'completed' ? 'bg-green-100 text-green-700' :
-                            work.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {work.status}
-                          </span>
                         </div>
-                        <p className="text-gray-600 text-sm mb-2">{work.description}</p>
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                          <span>Est. Cost: MVR {work.estimatedCost?.toLocaleString() || 0}</span>
-                          <span>Actual: MVR {work.actualCost?.toLocaleString() || 0}</span>
-                        </div>
+                        {work.comparisonContractors && work.comparisonContractors.length > 0 && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">Comparing:</span>
+                            {work.comparisonContractors.map((contractor, idx) => (
+                              <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                                {contractor}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
+                    </div>
+
+                    {/* Tasks */}
+                    <div className="p-4 space-y-3">
+                      {work.tasks && work.tasks.length > 0 ? (
+                        work.tasks.map((task, taskIndex) => (
+                          <div key={task.id} className="p-4 bg-white border border-gray-200 rounded-lg">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h5 className="font-medium text-gray-900">{task.description}</h5>
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    task.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                    task.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                                    task.status === 'on_hold' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-gray-100 text-gray-700'
+                                  }`}>
+                                    {task.status.replace('_', ' ')}
+                                  </span>
+                                </div>
+                                
+                                {/* Progress Bar */}
+                                <div className="mb-3">
+                                  <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                                    <span>Progress</span>
+                                    <span>{task.progress}%</span>
+                                  </div>
+                                  <div className="w-full bg-gray-200 rounded-full h-2">
+                                    <div
+                                      className="bg-blue-500 h-2 rounded-full transition-all"
+                                      style={{ width: `${task.progress}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+
+                                {/* Task Details Grid */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                  {task.hasCost && (
+                                    <div>
+                                      <p className="text-gray-500 text-xs">Est. Cost</p>
+                                      <p className="font-medium text-gray-900">MVR {task.estimatedCost?.toLocaleString() || 0}</p>
+                                    </div>
+                                  )}
+                                  {task.startDate && (
+                                    <div>
+                                      <p className="text-gray-500 text-xs">Start Date</p>
+                                      <p className="font-medium text-gray-900">{format(new Date(task.startDate), 'MMM d, yyyy')}</p>
+                                    </div>
+                                  )}
+                                  {task.endDate && (
+                                    <div>
+                                      <p className="text-gray-500 text-xs">End Date</p>
+                                      <p className="font-medium text-gray-900">{format(new Date(task.endDate), 'MMM d, yyyy')}</p>
+                                    </div>
+                                  )}
+                                  {task.assignedTo && (
+                                    <div>
+                                      <p className="text-gray-500 text-xs">Assigned To</p>
+                                      <p className="font-medium text-gray-900">{task.assignedTo}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : work.description ? (
+                        // Legacy structure fallback
+                        <div className="p-4 bg-gray-100 rounded-lg">
+                          <p className="text-gray-700">{work.description}</p>
+                          <div className="flex items-center gap-4 text-sm text-gray-500 mt-2">
+                            <span>Est. Cost: MVR {work.estimatedCost?.toLocaleString() || 0}</span>
+                            {work.actualCost && <span>Actual: MVR {work.actualCost?.toLocaleString()}</span>}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-sm italic">No tasks defined for this department</p>
+                      )}
                     </div>
                   </div>
                 ))}
