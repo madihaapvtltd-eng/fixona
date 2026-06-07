@@ -1,0 +1,560 @@
+import { useQuery } from 'react-query';
+import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import type { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAuthStore } from '@/stores/authStore';
+import { format, isAfter, subDays } from 'date-fns';
+import {
+  Wrench,
+  Package,
+  Building2,
+  Users,
+  AlertTriangle,
+  TrendingUp,
+  ClipboardList,
+  Briefcase,
+  CheckCircle,
+  Clock,
+  Calendar,
+  DollarSign,
+  AlertCircle,
+} from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+} from 'recharts';
+import { Link } from 'react-router-dom';
+
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  change?: string;
+  icon: React.ElementType;
+  color: string;
+  href?: string;
+}
+
+function StatCard({ title, value, change, icon: Icon, color, href }: StatCardProps) {
+  const IconElement = Icon ? <Icon className="h-6 w-6 text-white" /> : null;
+  
+  const content = (
+    <div className="card hover:shadow-md transition-shadow">
+      <div className="flex items-center">
+        <div className={`p-3 rounded-lg ${color}`}>
+          {IconElement}
+        </div>
+        <div className="ml-4">
+          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          {change && (
+            <p className={`text-sm ${change.startsWith('+') ? 'text-green-600' : 'text-gray-500'}`}>
+              {change}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (href) {
+    return <Link to={href}>{content}</Link>;
+  }
+  return content;
+}
+
+const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+
+interface Project {
+  id: string;
+  projectNumber: string;
+  name: string;
+  status: string;
+  priority: string;
+  budget: number;
+  totalCost: number;
+  createdAt: any;
+  startDate: string;
+  endDate: string;
+}
+
+export function DashboardPage() {
+  const { user, getCompanyId, isSuperAdmin } = useAuthStore();
+  const companyId = getCompanyId();
+  
+  console.log('[DASHBOARD DEBUG] user:', user?.email, 'companyId:', companyId, 'isSuperAdmin:', isSuperAdmin());
+  
+  // Fetch all data with company filtering
+  const { data: stats } = useQuery(['dashboardStats', companyId], async () => {
+    // Build queries based on companyId
+    let workOrdersQuery, assetsQuery, inventoryQuery, usersQuery, projectsQuery;
+    
+    if (isSuperAdmin() && !companyId) {
+      // Super admin without company sees all
+      console.log('[DASHBOARD DEBUG] Loading ALL data (superadmin mode)');
+      workOrdersQuery = collection(db, 'work_orders');
+      assetsQuery = collection(db, 'assets');
+      inventoryQuery = collection(db, 'inventory');
+      usersQuery = query(collection(db, 'users'), where('isActive', '==', true));
+      projectsQuery = collection(db, 'projects');
+    } else if (companyId) {
+      // Filter by company
+      console.log('[DASHBOARD DEBUG] Loading data filtered by companyId:', companyId);
+      workOrdersQuery = query(collection(db, 'work_orders'), where('companyId', '==', companyId));
+      assetsQuery = query(collection(db, 'assets'), where('companyId', '==', companyId));
+      inventoryQuery = query(collection(db, 'inventory'), where('companyId', '==', companyId));
+      usersQuery = query(
+        collection(db, 'users'), 
+        where('companyId', '==', companyId),
+        where('isActive', '==', true)
+      );
+      projectsQuery = query(collection(db, 'projects'), where('companyId', '==', companyId));
+    } else {
+      // No company - return empty data
+      console.log('[DASHBOARD DEBUG] NO companyId - returning EMPTY data');
+      return {
+        workOrders: [], assets: [], inventory: [], users: [], projects: [],
+        statusCounts: {}, priorityCounts: {},
+        openWO: 0, completedWO: 0, overdueWO: 0,
+        highRiskAssets: 0, criticalRiskAssets: 0, assetsUnderMaintenance: 0,
+        lowStockItems: 0, totalInventoryValue: 0,
+        activeUsers: 0, recentProjects: []
+      };
+    }
+    
+    const [workOrdersSnap, assetsSnap, inventorySnap, usersSnap, projectsSnap] = await Promise.all([
+      getDocs(workOrdersQuery),
+      getDocs(assetsQuery),
+      getDocs(inventoryQuery),
+      getDocs(usersQuery),
+      getDocs(projectsQuery),
+    ]);
+
+    const workOrders = workOrdersSnap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => d.data());
+    const assets = assetsSnap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => d.data());
+    const inventory = inventorySnap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => d.data());
+    const projects = projectsSnap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => ({ id: d.id, ...d.data() }));
+
+    // Work Orders by Status - REAL DATA
+    const statusCounts: Record<string, number> = {};
+    workOrders.forEach((wo: DocumentData) => {
+      const status = wo.status || 'unknown';
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+
+    // Priority counts
+    const priorityCounts: Record<string, number> = {};
+    workOrders.forEach((wo: DocumentData) => {
+      const priority = wo.priority || 'unknown';
+      priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
+    });
+
+    // Active work orders
+    const activeStatuses = ['open', 'raised', 'assigned_to_supervisor', 'assigned_to_technician', 'assigned_to_dept_admin', 'in_progress', 'need_to_buy', 'fixed', 'work_started_with_items'];
+    const openWO = workOrders.filter((wo: DocumentData) => activeStatuses.includes(wo.status)).length;
+    const completedWO = workOrders.filter((wo: DocumentData) => wo.status === 'completed' || wo.progress === 100).length;
+    
+    // Overdue work orders
+    const overdueWO = workOrders.filter((wo: DocumentData) => {
+      if (!wo.dueDate || wo.status === 'completed' || wo.status === 'cancelled') return false;
+      const dueDate = wo.dueDate?.toDate?.() || new Date(wo.dueDate);
+      return dueDate < new Date();
+    }).length;
+
+    // High risk assets
+    const highRiskAssets = assets.filter((a: DocumentData) => a.riskLevel === 'high' || a.riskLevel === 'critical').length;
+    const criticalRiskAssets = assets.filter((a: DocumentData) => a.riskLevel === 'critical').length;
+    const assetsUnderMaintenance = assets.filter((a: DocumentData) => a.status === 'maintenance').length;
+
+    // Inventory
+    const lowStockItems = inventory.filter((i: DocumentData) => i.quantity <= i.minThreshold).length;
+    const outOfStockItems = inventory.filter((i: DocumentData) => i.quantity === 0).length;
+    const totalInventoryValue = inventory.reduce((sum: number, i: DocumentData) => sum + (i.quantity * i.unitCost || 0), 0);
+
+    // Projects
+    const activeProjects = projects.filter((p: any) => p.status === 'in_progress' || p.status === 'planning').length;
+    const completedProjects = projects.filter((p: any) => p.status === 'completed').length;
+    const totalProjectBudget = projects.reduce((sum: number, p: any) => sum + (p.budget || 0), 0);
+    const totalProjectCost = projects.reduce((sum: number, p: any) => sum + (p.totalCost || 0), 0);
+
+    // Work orders created this week
+    const oneWeekAgo = subDays(new Date(), 7);
+    const newThisWeek = workOrders.filter((wo: DocumentData) => {
+      const createdAt = wo.createdAt?.toDate?.() || new Date(wo.createdAt);
+      return isAfter(createdAt, oneWeekAgo);
+    }).length;
+
+    return {
+      totalAssets: assets.length,
+      totalWorkOrders: workOrders.length,
+      assetsUnderMaintenance,
+      highRiskAssets,
+      criticalRiskAssets,
+      openWorkOrders: openWO,
+      completedWorkOrders: completedWO,
+      overdueWorkOrders: overdueWO,
+      lowStockItems,
+      outOfStockItems,
+      totalInventoryValue,
+      totalStaff: usersSnap.docs.length,
+      totalProjects: projects.length,
+      activeProjects,
+      completedProjects,
+      totalProjectBudget,
+      totalProjectCost,
+      newWorkOrdersThisWeek: newThisWeek,
+      workOrdersByStatus: statusCounts,
+      workOrdersByPriority: priorityCounts,
+      workOrdersList: workOrders,
+      projectsList: projects,
+      assetsList: assets,
+    };
+  });
+
+  // Fetch recent work orders
+  const { data: recentWorkOrders } = useQuery('recentWorkOrders', async () => {
+    const q = query(
+      collection(db, 'work_orders'),
+      orderBy('createdAt', 'desc'),
+      limit(5)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => ({ id: d.id, ...d.data() }));
+  });
+
+  // Chart data - REAL DATA from statusCounts
+  const statusData = Object.entries(stats?.workOrdersByStatus || {})
+    .map(([name, value]) => ({ name: name.replace(/_/g, ' '), value }))
+    .filter((d) => d.value > 0)
+    .sort((a, b) => (b.value as number) - (a.value as number));
+
+  const priorityData = Object.entries(stats?.workOrdersByPriority || {})
+    .map(([name, value]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), count: value as number }))
+    .filter((d) => d.count > 0);
+
+  // Cost data by month (last 6 months)
+  const costData = (() => {
+    const months: Record<string, { month: string; cost: number; count: number }> = {};
+    const now = new Date();
+    
+    // Initialize last 6 months
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = format(d, 'MMM yyyy');
+      months[key] = { month: key, cost: 0, count: 0 };
+    }
+    
+    // Aggregate completed work order costs
+    stats?.workOrdersList?.forEach((wo: DocumentData) => {
+      if (wo.status === 'completed' && wo.completedAt) {
+        const date = wo.completedAt.toDate ? wo.completedAt.toDate() : new Date(wo.completedAt);
+        const key = format(date, 'MMM yyyy');
+        if (months[key]) {
+          months[key].cost += (wo.cost || wo.finalCost || 0);
+          months[key].count += 1;
+        }
+      }
+    });
+    
+    return Object.values(months);
+  })();
+
+  // Department breakdown
+  const departmentData = (() => {
+    const depts: Record<string, { name: string; workOrders: number; cost: number }> = {};
+    
+    stats?.workOrdersList?.forEach((wo: DocumentData) => {
+      const dept = wo.department || 'Unassigned';
+      if (!depts[dept]) {
+        depts[dept] = { name: dept, workOrders: 0, cost: 0 };
+      }
+      depts[dept].workOrders += 1;
+      if (wo.status === 'completed') {
+        depts[dept].cost += (wo.cost || wo.finalCost || 0);
+      }
+    });
+    
+    return Object.values(depts).sort((a, b) => b.workOrders - a.workOrders).slice(0, 8);
+  })();
+
+  return (
+    <div className="space-y-6">
+      {/* Welcome Banner with Storyset Illustration */}
+      <div className="card bg-gradient-to-r from-primary-50 to-blue-50 border border-primary-100">
+        <div className="flex flex-col md:flex-row items-center gap-6">
+          <img 
+            src="/storyset-illustrations/Office management-amico.svg" 
+            alt="Fixora Dashboard" 
+            className="w-40 h-40 object-contain"
+          />
+          <div className="text-center md:text-left">
+            <h1 className="text-2xl font-bold text-gray-900">Welcome to Fixora</h1>
+            <p className="text-gray-600 mt-1">Built for Zero Downtime. Manage your maintenance efficiently.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Grid - More Comprehensive */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Total Work Orders"
+          value={stats?.totalWorkOrders || 0}
+          change={`${stats?.completedWorkOrders || 0} completed`}
+          icon={ClipboardList}
+          color="bg-purple-500"
+          href="/work-orders"
+        />
+        <StatCard
+          title="Open Work Orders"
+          value={stats?.openWorkOrders || 0}
+          change={`${stats?.overdueWorkOrders || 0} overdue`}
+          icon={Wrench}
+          color="bg-blue-500"
+          href="/work-orders"
+        />
+        <StatCard
+          title="New This Week"
+          value={stats?.newWorkOrdersThisWeek || 0}
+          icon={Calendar}
+          color="bg-indigo-500"
+          href="/work-orders"
+        />
+        <StatCard
+          title="Total Projects"
+          value={stats?.totalProjects || 0}
+          change={`${stats?.activeProjects || 0} active`}
+          icon={Briefcase}
+          color="bg-pink-500"
+          href="/projects"
+        />
+        <StatCard
+          title="Total Assets"
+          value={stats?.totalAssets || 0}
+          change={`${stats?.assetsUnderMaintenance || 0} under maintenance`}
+          icon={Building2}
+          color="bg-green-500"
+          href="/assets"
+        />
+        <StatCard
+          title="High Risk Assets"
+          value={stats?.highRiskAssets || 0}
+          change={`${stats?.criticalRiskAssets || 0} critical`}
+          icon={AlertCircle}
+          color="bg-red-500"
+          href="/assets?risk=high"
+        />
+        <StatCard
+          title="Low Stock Items"
+          value={stats?.lowStockItems || 0}
+          change={`${stats?.outOfStockItems || 0} out of stock`}
+          icon={Package}
+          color="bg-amber-500"
+          href="/inventory"
+        />
+        <StatCard
+          title="Total Staff"
+          value={stats?.totalStaff || 0}
+          icon={Users}
+          color="bg-cyan-500"
+          href="/staff"
+        />
+      </div>
+
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Work Orders by Status */}
+        <div className="card">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Work Orders by Status</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={statusData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  paddingAngle={5}
+                  dataKey="value"
+                  label
+                >
+                  {statusData.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Work Orders by Priority */}
+        <div className="card">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Work Orders by Priority</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={priorityData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="#3b82f6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Cost Trends Chart */}
+      <div className="card">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Maintenance Costs (Last 6 Months)</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={costData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis tickFormatter={(value) => `MVR ${value.toLocaleString()}`} />
+              <Tooltip formatter={(value: number) => `MVR ${value.toLocaleString()}`} />
+              <Bar dataKey="cost" fill="#10b981" name="Total Cost" />
+              <Bar dataKey="count" fill="#3b82f6" name="Completed WO" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Department Breakdown */}
+      {departmentData.length > 0 && (
+        <div className="card">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Work Orders by Department</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={departmentData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="name" type="category" width={100} />
+                <Tooltip />
+                <Bar dataKey="workOrders" fill="#8b5cf6" name="Work Orders" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Recent Work Orders */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Recent Work Orders</h3>
+          <Link to="/work-orders" className="text-sm text-primary-600 hover:text-primary-700">
+            View all
+          </Link>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead>
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">WO #</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {recentWorkOrders?.map((wo: DocumentData) => (
+                <tr key={wo.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 text-sm font-medium text-primary-600">
+                    <Link to={`/work-orders/${wo.id}`}>{wo.woNumber}</Link>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-900">{wo.title}</td>
+                  <td className="px-4 py-3">
+                    <span className={`badge status-${wo.status}`}>
+                      {wo.status.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`badge priority-${wo.priority}`}>
+                      {wo.priority}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-500">
+                    {wo.createdAt?.toDate ? format(wo.createdAt.toDate(), 'MMM d, yyyy') : 'N/A'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Projects Section */}
+      {stats?.projectsList && stats.projectsList.length > 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Active Projects</h3>
+            <Link to="/projects" className="text-sm text-primary-600 hover:text-primary-700">
+              View all
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {stats.projectsList
+              .filter((p: any) => p.status === 'in_progress' || p.status === 'planning')
+              .slice(0, 6)
+              .map((project: any) => (
+                <Link
+                  key={project.id}
+                  to={`/projects/${project.id}`}
+                  className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-semibold text-gray-900">{project.projectNumber}</p>
+                      <p className="text-sm text-gray-600 mt-1">{project.name}</p>
+                    </div>
+                    <span className={`badge status-${project.status}`}>
+                      {project.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-center gap-4 text-sm text-gray-500">
+                    <span>Budget: MVR {project.budget?.toLocaleString() || 0}</span>
+                    <span>Priority: {project.priority}</span>
+                  </div>
+                </Link>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* AI Risk Alerts */}
+      <div className="card border-l-4 border-l-amber-500">
+        <div className="flex items-start gap-4">
+          <div className="p-2 bg-amber-100 rounded-lg">
+            <AlertTriangle className="h-5 w-5 text-amber-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">AI Risk Alerts</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              {stats?.highRiskAssets || 0} assets flagged with high risk. Review and schedule preventive maintenance.
+            </p>
+            <Link
+              to="/assets?filter=risk"
+              className="inline-flex items-center mt-3 text-sm font-medium text-primary-600 hover:text-primary-700"
+            >
+              <TrendingUp className="h-4 w-4 mr-1" />
+              View risk analysis
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isSupervisor() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'supervisor'];
+    }
+    
+    function isTechnician() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'supervisor', 'technician'];
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || isOwner(userId);
+      allow delete: if isAdmin();
+    }
+    
+    // Assets collection
+    match /assets/{assetId} {
+      allow read: if isTechnician();
+      allow create, update, delete: if isSupervisor();
+    }
+    
+    // Work Orders collection
+    match /work_orders/{workOrderId} {
+      allow read: if isTechnician() && 
+        (resource == null || 
+         resource.data.assignedTo == request.auth.uid || 
+         isSupervisor());
+      allow create: if isSupervisor();
+      allow update: if isTechnician() && 
+        (resource.data.assignedTo == request.auth.uid || 
+         resource.data.createdBy == request.auth.uid ||
+         isSupervisor());
+      allow delete: if isAdmin();
+    }
+    
+    // Work Order History
+    match /work_order_history/{historyId} {
+      allow read: if isTechnician();
+      allow write: if isTechnician();
+    }
+    
+    // Inventory collection
+    match /inventory/{itemId} {
+      allow read: if isTechnician();
+      allow write: if isSupervisor();
+    }
+    
+    // Inventory Logs
+    match /inventory_logs/{logId} {
+      allow read: if isTechnician();
+      allow write: if isTechnician();
+    }
+    
+    // Maintenance Logs
+    match /maintenance_logs/{logId} {
+      allow read: if isTechnician();
+      allow write: if isTechnician();
+    }
+    
+    // Locations
+    match /locations/{locationId} {
+      allow read: if isTechnician();
+      allow write: if isSupervisor();
+    }
+    
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && 
+        (resource == null || resource.data.userId == request.auth.uid);
+      allow create: if isSupervisor();
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+    
+    // Suppliers
+    match /suppliers/{supplierId} {
+      allow read: if isTechnician();
+      allow write: if isSupervisor();
+    }
+    
+    // Purchase Orders
+    match /purchase_orders/{poId} {
+      allow read: if isTechnician();
+      allow write: if isSupervisor();
+    }
+    
+    // User Stats
+    match /user_stats/{statsId} {
+      allow read: if isTechnician();
+      allow write: if isAdmin();
+    }
+    
+    // Maintenance Schedules
+    match /maintenance_schedules/{scheduleId} {
+      allow read: if isTechnician();
+      allow write: if isSupervisor();
+    }
+  }
+}

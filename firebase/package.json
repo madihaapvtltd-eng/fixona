@@ -1,0 +1,29 @@
+{
+  "name": "@cmms/firebase",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "emulators": "firebase emulators:start --project demo-cmms --import=./emulator-data --export-on-exit",
+    "deploy": "firebase deploy --only functions",
+    "deploy:rules": "firebase deploy --only firestore:rules,storage:rules",
+    "logs": "firebase functions:log",
+    "seed": "node dist/seed.js"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "main": "dist/index.js",
+  "dependencies": {
+    "firebase-admin": "^11.11.0",
+    "firebase-functions": "^4.5.0",
+    "axios": "^1.6.0",
+    "form-data": "^4.0.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "firebase-tools": "^12.9.0"
+  },
+  "private": true
+}

@@ -1,0 +1,24 @@
+{
+  "name": "cmms-root",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "mobile",
+    "web",
+    "shared",
+    "firebase"
+  ],
+  "scripts": {
+    "build": "cd web && npm install && npm run build",
+    "dev:web": "cd web && npm run dev",
+    "dev:mobile": "cd mobile && npx expo start",
+    "build:web": "cd web && npm run build",
+    "build:mobile": "cd mobile && npx expo build",
+    "emulators": "cd firebase && npm run emulators",
+    "deploy:web": "cd web && npm run deploy",
+    "deploy:firebase": "cd firebase && npm run deploy"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

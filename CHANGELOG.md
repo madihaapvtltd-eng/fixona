@@ -1,0 +1,323 @@
+# Fixora Changelog
+
+All notable changes to Fixora are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+---
+
+## [1.2.3] - 2026-04-01
+
+### Added
+
+#### Vehicle Management
+- **Vehicle Categories**: Added 14 vehicle categories for asset classification
+  - Categories: Sedan, SUV, Pickup Truck, Truck, Van, Bus, Motorcycle, Forklift, Excavator, Bulldozer, Crane, Generator, Compressor, Other
+  - Vehicle category field appears when asset type is "vehicle" or "machinery"
+  - Categories can be edited in asset detail page
+
+- **Fuel Request System**: Complete fuel management for company vehicles
+  - **Fuel Request Page**: `/fuel-requests/new`
+    - Vehicle selection with vehicle category display
+    - Previous and current odometer readings
+    - Auto-calculated total KM (current - previous)
+    - Last filled date and current fill date tracking
+    - Amount in MVR
+    - Liters filled (optional)
+    - Fuel type selection (Petrol/Diesel/Other)
+    - Notes field for additional information
+  - **Fuel Requests List**: `/fuel-requests`
+    - View all fuel requests with status tracking
+    - Filter by status (pending, approved, completed, rejected)
+    - Search by vehicle name, code, or requester
+    - Statistics summary (total requests, amount, KM traveled)
+    - Approve/Reject/Complete actions for managers
+    - Odometer history tracking
+
+---
+
+## [1.2.2] - 2026-03-31
+
+### Fixed
+
+#### Application Loading & Routing
+- **Fixed Blank Page on Reload**: Changed auth loading state to start as `false`
+  - Resolves: Application showing blank/white screen after page refresh
+  - Auth state now initializes without blocking render
+  - User sees login page or dashboard immediately
+
+- **Fixed React Error #31 (StatCard Icons)**: Simplified icon rendering in DashboardPage
+  - Resolves: `Minified React error #31` with `$$typeof, render, displayName`
+  - Removed `typeof Icon === 'function'` check that failed in production builds
+  - StatCard component now renders icons correctly in all environments
+
+- **Fixed Project Edit 404 Error**: Reordered React Router routes and updated Vercel config
+  - Resolves: 404 error when accessing `/projects/:id/edit` directly
+  - Moved specific `/projects/:id/edit` route before generic `/projects/:id` route
+  - Updated `vercel.json` with proper SPA rewrite rules
+
+### Added
+
+#### Error Handling
+- **ErrorBoundary Component**: Global error catching for better debugging
+  - Catches and displays React errors gracefully
+  - Shows error message and component stack trace
+  - Includes "Clear cache and reload" button for recovery
+  - Wraps entire application in main.tsx
+
+---
+
+## [1.2.1] - 2026-03-30
+
+### Added
+
+#### Project Management
+- **Edit Project Page**: New dedicated page for editing existing projects
+  - Route: `/projects/:id/edit`
+  - Full form with all project fields: basic info, department breakdown, contractors, payment schedule
+  - Pre-fills existing data from Firestore
+  - Updates project with user tracking (updatedBy, updatedByName)
+
+### Fixed
+
+#### Service Worker & Firestore Errors
+- **Fixed Firestore Caching Errors**: Changed Firestore API caching from `NetworkFirst` to `NetworkOnly`
+  - Resolves: `Failed to execute 'put' on 'Cache': Cache.put() encountered a network error`
+  - Resolves: `WebChannelConnection RPC 'Listen' stream transport errored`
+  - Firestore WebChannel streaming connections should not be cached
+  - Note: Clear browser cache and unregister old service workers to fully apply fix
+
+---
+
+### Added
+
+#### Purchase Workflow Enhancement
+- **Detailed Purchase Stages**: Complete multi-stage purchase workflow
+  - `need_to_buy` - Technician requests parts
+  - `purchase_assigned_technician` - Technician buys and submits bill
+  - `purchase_assigned_purchasing` - Purchasing team handles purchase
+  - `quotation_in_progress` - Getting supplier quotations
+  - `quotation_submitted_for_signature` - Waiting for approval
+  - `quotation_approved` - Approved and ready for payment
+  - `payment_done` - Payment processed
+  - `items_collection_assigned` - Assigned to collect items
+  - `items_purchased` - Items collected from supplier
+  - `items_received` - Technician receives items
+  - `work_started_with_items` - Continuing work with new parts
+  - `need_to_buy_again` - Loop back for additional parts
+
+- **Purchase Notifications**: Automatic notifications to relevant roles
+  - Supervisors and admins notified when technician needs parts
+  - Purchasing team notified when assigned
+  - All stakeholders notified at each workflow stage
+
+- **Role-Based Purchase Actions**: Different actions available based on user role
+  - Admin/Supervisor: Assign to purchasing or buy by technician
+  - Purchasing: Acknowledge, submit quotations, collect items
+  - Technician: Submit bills, receive items, mark work complete
+
+#### Activity History Improvements
+- **User Names in History**: Activity history now shows who performed each action
+- **Relative Timestamps**: Display time as "10 minutes ago", "2 hours ago", etc.
+- **Enhanced UI**: Better visual representation of workflow stages
+
+#### Asset Management
+- **Delete Asset Option**: Super admins can delete assets with confirmation modal
+- **QR Code Functionality**: Generate and download QR codes for assets
+- **Edit Asset**: Update asset information directly from asset detail page
+
+#### Work Order Enhancements
+- **Optional Asset Selection**: When creating work orders, users can optionally select an existing asset
+- **Asset Auto-Fill**: Selecting an asset automatically fills location information
+- **Technician Work Orders Fix**: Technicians can now see all assigned work orders in their list
+- **Start Work Button**: Fixed visibility issue for "Start Work" button on technician dashboard
+
+### Changed
+
+- **Workflow Stages**: Replaced simplified purchase workflow with detailed 12-stage process
+- **Status Badges**: Updated colors and labels for new workflow stages
+- **Notification System**: Expanded notification types to include `purchase_request`
+
+### Fixed
+
+- QR code button not working on asset detail page
+- Edit button not working on asset detail page
+- Technician work orders page showing empty list despite notifications
+- Missing user names in activity history
+- Activity timestamps not showing relative time
+
+---
+
+## [1.1.0] - 2026-03-20
+
+### Added
+
+- **Work Order System**: Complete work order lifecycle management
+  - Create, assign, track, and complete work orders
+  - Multiple status stages: raised, assigned, in-progress, fixed, completed
+  - Priority levels: Low, Medium, High, Critical
+  - Types: Maintenance, Repair, Installation, Inspection
+
+- **Multi-Role Support**: Role-based access control
+  - Super Admin: Full system access
+  - Admin: Manage work orders and users
+  - Supervisor: Assign and oversee work
+  - Technician: Execute work orders
+  - User: Create and track requests
+  - Purchasing: Handle procurement
+
+- **Asset Management**: Track equipment and machinery
+  - Asset registration with details
+  - QR code generation for mobile access
+  - Maintenance history tracking
+  - Work order association
+
+- **Real-time Notifications**: Firebase-powered notification system
+  - Work order assignments
+  - Status changes
+  - Comments added
+  - Role-based notification routing
+
+- **Activity History**: Complete audit trail
+  - Timestamp for all actions
+  - User tracking
+  - Status transitions
+  - Comment history
+
+- **Image Uploads**: Cloudinary integration
+  - Upload issue photos
+  - Upload completion photos
+  - Image galleries in work orders
+
+- **Progress Tracking**: Work completion percentage
+  - Update progress from 0-100%
+  - Progress comments
+  - Visual progress bars
+
+- **Assignment System**: Staff assignment workflow
+  - Assign supervisors to work orders
+  - Assign technicians to work orders
+  - Assignment comments and timestamps
+
+- **Mobile Responsive**: Works on all devices
+  - Desktop optimized
+  - Tablet compatible
+  - Mobile responsive design
+
+### Technical
+
+- React + TypeScript frontend
+- Firebase backend (Firestore, Auth, Functions)
+- Vite build tool
+- Tailwind CSS styling
+- React Query for data fetching
+- Zustand for state management
+
+---
+
+## [1.0.0] - 2026-03-01
+
+### Added
+
+- **Initial Release**: Base CMMS system
+- **User Authentication**: Firebase Auth integration
+- **Dashboard**: Overview of system activity
+- **Basic Work Orders**: Create and view work orders
+- **User Management**: Add and manage system users
+- **Profile Management**: User profile settings
+
+---
+
+## Version History
+
+| Version | Date | Description |
+|---------|------|-------------|
+| 1.2.2 | 2026-03-31 | Fixed blank page on reload, React error #31, project edit 404, added ErrorBoundary |
+| 1.2.1 | 2026-03-30 | Edit project page, fixed Firestore service worker caching errors |
+| 1.2.0 | 2026-03-28 | Detailed purchase workflow, activity history improvements, asset management fixes |
+| 1.1.0 | 2026-03-20 | Complete work order system, multi-role support, notifications, asset management |
+| 1.0.0 | 2026-03-01 | Initial release with basic functionality |
+
+---
+
+## Planned Features
+
+### Upcoming in v1.3.0
+- WhatsApp integration for notifications
+- AI-powered predictive maintenance
+- Advanced analytics dashboard
+- Offline mobile app capability
+- Barcode scanning for assets
+- Inventory management for spare parts
+- Preventive maintenance scheduling
+- Vendor management module
+
+### Future Enhancements
+- Mobile app for technicians (React Native)
+- Voice notes in work orders
+- Time tracking per work order
+- Cost analysis and reporting
+- SLA management
+- Multi-location support
+- Integration with accounting systems
+- Custom workflow builder
+- API for third-party integrations
+
+---
+
+## Migration Notes
+
+### v1.2.1 to v1.2.2
+- **No data migration required**
+- **Cache clear recommended**: To ensure all fixes apply, clear browser cache:
+  1. Open DevTools (F12) → Application tab → Storage → Clear site data
+  2. Or use the red "Stuck? Click to Reset" button on loading screen
+  3. Refresh the page (F5)
+
+### v1.2.0 to v1.2.1
+- **Service Worker Cache Clear Required**: To fix Firestore caching errors, clear browser cache:
+  1. Open DevTools (F12) → Application tab → Service Workers
+  2. Click "Unregister" for the Fixora service worker
+  3. Check "Update on reload" and refresh the page
+  4. Or use: DevTools → Clear Site Data → Clear all data
+- No data migration required
+
+### v1.1.0 to v1.2.0
+- Workflow status codes updated - old `quotation_requested` and `quotation_received` replaced with new detailed stages
+- Notifications collection may need index updates for new `purchase_request` type
+- No data migration required - existing work orders remain functional
+
+### v1.0.0 to v1.1.0
+- Firestore security rules updated for new collections
+- New indexes required for work_orders queries
+- User roles updated - may need to reassign roles to existing users
+
+---
+
+## Documentation
+
+Documentation files added/updated in each version:
+
+### v1.2.0
+- Created USER_MANUAL.md
+- Created HANDBOOK.md
+- Updated README.md with new features
+- Created CHANGELOG.md
+
+### v1.1.0
+- Created SETUP_GUIDE.md
+- Created initial README.md
+
+---
+
+## Contributors
+
+- System Administrator
+- Development Team
+- Quality Assurance Team
+
+---
+
+## License
+
+MIT License - See LICENSE file for details.
